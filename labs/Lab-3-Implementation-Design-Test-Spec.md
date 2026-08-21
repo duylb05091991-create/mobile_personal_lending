@@ -59,10 +59,12 @@ Decision Engine -> Mobile App: present Loan Offer
 | --- | --- | --- | --- |
 | T-01 | Draft -> Submitted | Mobile App | Loan Application is created |
 | T-02 | Submitted -> Scoring | Loan Application Service | Eligible request enters scoring |
+| T-02A | Submitted -> Rejected | Loan Application Service | Out-of-segment request is rejected under CON.2 |
 | T-03 | Scoring -> OfferReady | Credit Scoring Adapter | Credit Score is accepted |
 | T-04 | Scoring -> Failed | Credit Scoring Adapter | Timeout is controlled and no approval occurs |
 | T-05 | OfferReady -> Approved | Decision Engine | Accepted agreement produces Approved |
 | T-06 | OfferReady -> Rejected | Decision Engine | Policy breach rejects |
+| T-06A | OfferReady -> Rejected | Mobile App / Decision Engine | Customer declines the Loan Offer |
 | T-07 | Approved -> AccountValidated | Account Validation Service | Valid account permits disbursement |
 | T-08 | Approved -> Failed | Account Validation Service | Invalid account blocks disbursement |
 | T-09 | AccountValidated -> Disbursed | Disbursement Adapter | Core Banking confirmation completes flow |

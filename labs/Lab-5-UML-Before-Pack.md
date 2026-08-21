@@ -24,10 +24,12 @@ Object: **Loan Application**. States: Draft, Submitted, Scoring, OfferReady, App
 | --- | --- |
 | Draft -> Submitted | T-01 |
 | Submitted -> Scoring | T-02 |
+| Submitted -> Rejected, CON.2 | T-02A |
 | Scoring -> OfferReady | T-03 |
 | Scoring -> Failed, CON.3 | T-04 |
 | OfferReady -> Approved | T-05 |
 | OfferReady -> Rejected, CON.1 | T-06 |
+| OfferReady -> Rejected, customer declines | T-06A |
 | Approved -> AccountValidated | T-07 |
 | Approved -> Failed, CON.4 | T-08 |
 | AccountValidated -> Disbursed | T-09 |

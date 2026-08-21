@@ -17,7 +17,7 @@ Audited sequence sources: [submit and decide](../puml/labs/lab-10-submit-decide-
 
 ## State coverage
 
-Loan Application transitions covered: Draft -> Submitted; Submitted -> Scoring; Scoring -> OfferReady; Scoring -> Failed; OfferReady -> Approved; OfferReady -> Rejected; Approved -> AccountValidated; Approved -> Failed; AccountValidated -> Disbursed; AccountValidated -> Failed.
+Loan Application transitions covered: Draft -> Submitted; Submitted -> Scoring; Submitted -> Rejected (CON.2); Scoring -> OfferReady; Scoring -> Failed; OfferReady -> Approved; OfferReady -> Rejected (CON.1 or customer decline); Approved -> AccountValidated; Approved -> Failed; AccountValidated -> Disbursed; AccountValidated -> Failed.
 
 ## Participant-to-SUT map
 
