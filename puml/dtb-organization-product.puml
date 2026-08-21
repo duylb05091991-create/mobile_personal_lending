@@ -1,0 +1,65 @@
+@startuml dtb-organization-product
+!include <archimate/Archimate>
+title Organization & Product — Daily VND credit transfer (DTB)
+caption VCB Architecture Modeling Language — Daily Transaction Banking trainee sample
+top to bottom direction
+
+' === Business Actors ===
+Business_Actor(custActor, "Business Actor BUS.ACT.01\nCustomer")
+Business_Actor(bankActor, "Business Actor BUS.ACT.02\nBank (VCB Retail Payments)")
+Business_Actor(napasActor, "Business Actor BUS.ACT.03\nNAPAS")
+
+' === Business Roles ===
+Business_Role(txRole, "Business Role BUS.ROL.01\nTransfer initiator")
+Business_Role(inqRole, "Business Role BUS.ROL.02\nInquiry requester")
+
+' === Product ===
+Business_Interface(product, "Product BUS.PRD.01\nDaily VND credit transfer")
+
+' === Business Services (compose the product) ===
+Business_Service(svcInit, "Business Service BUS.SVC.01\nTransfer initiation")
+Business_Service(svcGate, "Business Service BUS.SVC.02\nDaily limit enforcement")
+Business_Service(svcCore, "Business Service BUS.SVC.03\nInternal credit posting")
+Business_Service(svcNapas, "Business Service BUS.SVC.04\nInterbank credit (NAPAS)")
+Business_Service(svcInq, "Business Service BUS.SVC.05\nTransfer inquiry")
+
+' === Business Objects ===
+Business_Object(objTx, "Business Object BUS.OBJ.01\nTransfer")
+Business_Object(objBucket, "Business Object BUS.OBJ.02\nDailyLimitBucket")
+Business_Object(objHist, "Business Object BUS.OBJ.03\nHistoryRecord")
+
+' === Assignment: Actor to Role ===
+Rel_Assignment(custActor, txRole, "assignment")
+Rel_Assignment(custActor, inqRole, "assignment")
+
+' === Aggregation: Bank aggregates roles ===
+Rel_Aggregation(bankActor, txRole, "aggregation")
+Rel_Aggregation(bankActor, inqRole, "aggregation")
+
+' === Product composition: product composed of services ===
+Rel_Composition(product, svcInit, "composition")
+Rel_Composition(product, svcGate, "composition")
+Rel_Composition(product, svcCore, "composition")
+Rel_Composition(product, svcNapas, "composition")
+Rel_Composition(product, svcInq, "composition")
+
+' === Serving: Services serve roles ===
+Rel_Serving(svcInit, txRole, "serving")
+Rel_Serving(svcGate, txRole, "serving")
+Rel_Serving(svcCore, txRole, "serving")
+Rel_Serving(svcNapas, txRole, "serving")
+Rel_Serving(svcInq, inqRole, "serving")
+
+' === Association: Objects to Product ===
+Rel_Association(objTx, product, "association")
+Rel_Association(objBucket, product, "association")
+Rel_Association(objHist, product, "association")
+
+legend bottom
+  One product (Daily VND credit transfer), two rails (Internal / NAPAS).
+  Internal and NAPAS are rails — not separate products.
+  Customer is both Transfer initiator and Inquiry requester.
+  Bank (VCB) aggregates both roles. NAPAS is an external actor (interbank rail only).
+  Teaching diagram — redraw in Archi for the dossier.
+endlegend
+@enduml

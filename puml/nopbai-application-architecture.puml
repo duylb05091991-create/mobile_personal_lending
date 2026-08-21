@@ -1,0 +1,36 @@
+@startuml nopbai-application-architecture
+!include <archimate/Archimate>
+title Application Architecture — Mobile Personal Loan Product
+caption Nopbai Architecture Modeling Language — Mobile Personal Loan sample
+left to right direction
+
+Application_Component(mobileApp, "Application Component\nMobile App")
+Application_Component(loanSvc, "Application Component\nLoan Application Service")
+Application_Component(decisionEngine, "Application Component\nDecision Engine")
+Application_Component(scoreAdapter, "Application Component\nCredit Scoring Adapter")
+Application_Component(policyEngine, "Application Component\nPolicy Engine")
+Application_Component(disburseAdapter, "Application Component\nDisbursement Adapter")
+Application_Component(esb, "Application Component\nESB Integration Layer")
+Application_Component(decisionStore, "Application Component\nDecision Store")
+Application_Component(auditLog, "Application Component\nAudit Log")
+
+Application_Component(scoreSystem, "Application Component\nCredit Scoring System")
+Application_Component(coreBanking, "Application Component\nCore Banking")
+
+Rel_Serving(mobileApp, loanSvc, "serving")
+Rel_Serving(loanSvc, decisionEngine, "serving")
+Rel_Serving(decisionEngine, scoreAdapter, "serving")
+Rel_Serving(scoreAdapter, scoreSystem, "serving")
+Rel_Serving(decisionEngine, policyEngine, "serving")
+Rel_Serving(decisionEngine, decisionStore, "serving")
+Rel_Serving(decisionEngine, mobileApp, "serving")
+Rel_Serving(disburseAdapter, esb, "serving")
+Rel_Serving(esb, coreBanking, "serving")
+Rel_Serving(decisionStore, auditLog, "serving")
+
+legend bottom
+  Application cooperation view for the mobile personal loan flow.
+  Decisioning, policy, and audit are separated from the mobile channel and the banking integration layer.
+  Teaching diagram — redraw in Archi for the dossier.
+endlegend
+@enduml

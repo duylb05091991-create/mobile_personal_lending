@@ -1,0 +1,52 @@
+@startuml dtb-layered-realization
+!include <archimate/Archimate>
+title Layered Realization — Daily limit enforcement thread (DTB)
+caption VCB Architecture Modeling Language — Daily Transaction Banking trainee sample
+top to bottom direction
+
+' === Business Layer ===
+Business_Service(bsGate, "Business Service BUS.SVC.02\nDaily limit enforcement")
+Business_Service(bsCore, "Business Service BUS.SVC.03\nInternal credit posting")
+Business_Service(bsNapas, "Business Service BUS.SVC.04\nInterbank credit (NAPAS)")
+
+' === Application Layer ===
+Application_Service(asReserve, "Application Service APP.SVC.01\nReserveBeforeRail")
+Application_Service(asInternal, "Application Service APP.SVC.02\nInitiateInternalTransfer")
+Application_Service(asNapas, "Application Service APP.SVC.03\nInitiateNAPASTransfer")
+Application_Component(limitSvc, "Application Component APP.CMP.06\nLimitService")
+Application_Component(orch, "Application Component APP.CMP.05\nPaymentOrchestration")
+Application_Component(coreAd, "Application Component APP.CMP.08\nCoreAdapter")
+Application_Component(napasAd, "Application Component APP.CMP.09\nNAPASAdapter")
+
+' === Technology Layer ===
+Technology_Service(techRuntime, "Technology Service\nApp runtime")
+Technology_Node(dtbApp, "Node TECH.ND.01\ndtb-app")
+Technology_Node(coreLpar, "Node TECH.ND.02\nCore Banking LPAR")
+
+' === Realization: Business → Application Service ===
+Rel_Realization_Down(bsGate, asReserve, "realization")
+Rel_Realization_Down(bsCore, asInternal, "realization")
+Rel_Realization_Down(bsNapas, asNapas, "realization")
+
+' === Realization: Application Service → Component ===
+Rel_Realization_Down(asReserve, limitSvc, "realization")
+Rel_Realization_Down(asInternal, orch, "realization")
+Rel_Realization_Down(asInternal, coreAd, "realization")
+Rel_Realization_Down(asNapas, orch, "realization")
+Rel_Realization_Down(asNapas, napasAd, "realization")
+
+' === Assignment: Component → Technology ===
+Rel_Assignment(limitSvc, techRuntime, "assignment")
+Rel_Assignment(orch, techRuntime, "assignment")
+Rel_Assignment(coreAd, techRuntime, "assignment")
+Rel_Assignment(napasAd, techRuntime, "assignment")
+Rel_Assignment_Down(techRuntime, dtbApp, "assignment")
+
+legend bottom
+  Do not skip layers: Business Service is NOT directly hosted on a node.
+  Business Service → Application Service → Application Component → Technology Service → Node.
+  Nesting thread: Daily limit enforcement → ReserveBeforeRail → LimitService → App runtime → dtb-app.
+  CoreBanking on Core LPAR. NAPASSwitch is external (no owned node on this diagram).
+  Teaching diagram — redraw in Archi for the dossier.
+endlegend
+@enduml

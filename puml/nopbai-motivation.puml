@@ -1,0 +1,78 @@
+@startuml nopbai-motivation
+!include <archimate/Archimate>
+title Motivation — Mobile Personal Loan Product
+caption Nopbai Architecture Modeling Language — Mobile Personal Loan sample
+left to right direction
+
+Motivation_Stakeholder(stkCustomer, "Stakeholder\nCustomer")
+Motivation_Stakeholder(stkOwner, "Stakeholder\nBank Owner")
+Motivation_Stakeholder(stkRisk, "Stakeholder\nRisk / Compliance")
+
+Motivation_Driver(drv1, "Driver MOT.DRV.01\nNeed for faster digital loan decisions")
+Motivation_Driver(drv2, "Driver MOT.DRV.02\nNeed to personalize lending offers")
+Motivation_Driver(drv3, "Driver MOT.DRV.03\nNeed for secure and auditable accounting integration")
+Motivation_Driver(drv4, "Driver MOT.DRV.04\nNeed for immediate access to approved funds")
+
+Motivation_Goal(goal1, "Goal MOT.GOAL.01\nDeliver mobile-first personal loan journey")
+Motivation_Goal(goal2, "Goal MOT.GOAL.02\nAutomate eligibility and decisioning")
+Motivation_Goal(goal3, "Goal MOT.GOAL.03\nPersonalize amount and rate")
+Motivation_Goal(goal4, "Goal MOT.GOAL.04\nEnsure reliable accounting and disbursement")
+Motivation_Goal(goal5, "Goal MOT.GOAL.05\nMaintain traceability, security, and compliance")
+
+Motivation_Outcome(out1, "Outcome MOT.OUT.01\nNear real-time loan decisions")
+Motivation_Outcome(out2, "Outcome MOT.OUT.02\nHigher conversion with less manual underwriting")
+Motivation_Outcome(out3, "Outcome MOT.OUT.03\nPolicy-compliant personalized offer")
+Motivation_Outcome(out4, "Outcome MOT.OUT.04\nImmediate disbursement after approval")
+Motivation_Outcome(out5, "Outcome MOT.OUT.05\nAudit-ready credit and accounting evidence")
+
+Motivation_Requirement(req1, "Requirement MOT.REQ.01\nFR-01 mobile application submission")
+Motivation_Requirement(req2, "Requirement MOT.REQ.02\nFR-03 credit score retrieval")
+Motivation_Requirement(req3, "Requirement MOT.REQ.03\nFR-04 eligible amount calculation")
+Motivation_Requirement(req4, "Requirement MOT.REQ.04\nFR-05 personalized interest rate")
+Motivation_Requirement(req5, "Requirement MOT.REQ.05\nFR-07 auto decisioning")
+Motivation_Requirement(req6, "Requirement MOT.REQ.06\nFR-09 immediate disbursement")
+Motivation_Requirement(req7, "Requirement MOT.REQ.07\nFR-10 accounting via ESB to Core Banking")
+Motivation_Requirement(req8, "Requirement MOT.REQ.08\nFR-11 decision traceability")
+
+Motivation_Constraint(con1, "Constraint MOT.CON.01\nMax unsecured loan = 100,000,000 VND")
+Motivation_Constraint(con2, "Constraint MOT.CON.02\nExisting salaried customers aged 22-35")
+Motivation_Constraint(con3, "Constraint MOT.CON.03\nNear real-time credit scoring integration")
+Motivation_Constraint(con4, "Constraint MOT.CON.04\nSecurity, privacy, and auditability")
+
+Rel_Association_Down(stkCustomer, drv1, "association")
+Rel_Association_Down(stkOwner, drv2, "association")
+Rel_Association_Down(stkRisk, drv3, "association")
+Rel_Association_Down(stkOwner, drv4, "association")
+
+Rel_Influence_Down(drv1, goal1, "influence")
+Rel_Influence_Down(drv2, goal2, "influence")
+Rel_Influence_Down(drv2, goal3, "influence")
+Rel_Influence_Down(drv3, goal4, "influence")
+Rel_Influence_Down(drv4, goal5, "influence")
+
+Rel_Association_Down(goal1, out1, "association")
+Rel_Association_Down(goal2, out2, "association")
+Rel_Association_Down(goal3, out3, "association")
+Rel_Association_Down(goal4, out4, "association")
+Rel_Association_Down(goal5, out5, "association")
+
+Rel_Association_Down(goal1, req1, "association")
+Rel_Association_Down(goal2, req2, "association")
+Rel_Association_Down(goal3, req3, "association")
+Rel_Association_Down(goal3, req4, "association")
+Rel_Association_Down(goal2, req5, "association")
+Rel_Association_Down(goal4, req6, "association")
+Rel_Association_Down(goal4, req7, "association")
+Rel_Association_Down(goal5, req8, "association")
+
+Rel_Association_Down(req3, con1, "association")
+Rel_Association_Down(req1, con2, "association")
+Rel_Association_Down(req2, con3, "association")
+Rel_Association_Down(req8, con4, "association")
+
+legend bottom
+  Goal: fast, mobile, automated, auditable lending.
+  One product, one policy-based decision flow.
+  Teaching diagram — redraw in Archi for the dossier.
+endlegend
+@enduml

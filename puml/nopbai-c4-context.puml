@@ -1,0 +1,22 @@
+@startuml nopbai-c4-context
+!include <C4/C4>
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+
+LAYOUT_WITH_LEGEND()
+
+Person(customer, "Customer", "Existing salaried customer")
+System(nopbaiPlatform, "Nopbai Personal Loan Platform", "Digital loan application and decisioning")
+System_Ext(creditScoring, "Credit Scoring System", "Provides near-real-time risk score and eligibility input")
+System_Ext(esb, "ESB Integration Layer", "Routes lending and accounting interactions with banking systems")
+System_Ext(coreBanking, "Core Banking", "Performs account validation, posting, and disbursement confirmation")
+
+Rel(customer, nopbaiPlatform, "Submits loan application")
+Rel(customer, nopbaiPlatform, "Reviews offer and accepts terms")
+Rel(nopbaiPlatform, creditScoring, "Requests credit assessment")
+Rel(nopbaiPlatform, esb, "Sends lending and transaction messages")
+Rel(esb, coreBanking, "Posts accounting and disbursement requests")
+Rel(nopbaiPlatform, coreBanking, "Confirms disbursement and transaction result")
+
+SHOW_LEGEND()
+@enduml

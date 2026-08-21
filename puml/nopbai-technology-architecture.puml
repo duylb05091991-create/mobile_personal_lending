@@ -1,0 +1,45 @@
+@startuml nopbai-technology-architecture
+!include <archimate/Archimate>
+title Technology Architecture — Mobile Personal Loan Product
+caption Nopbai Architecture Modeling Language — Mobile Personal Loan sample
+top to bottom direction
+
+' === Nodes ===
+Technology_Node(mobileTier, "Node TECH.ND.01\nMobile Channel Tier")
+Technology_Node(lendingTier, "Node TECH.ND.02\nLending Service Tier")
+Technology_Node(integrationTier, "Node TECH.ND.03\nIntegration Tier")
+Technology_Node(dataTier, "Node TECH.ND.04\nData and Evidence Tier")
+Technology_Node(externalTier, "Node TECH.ND.05\nExternal Banking Tier")
+
+' === Application Components ===
+Application_Component(mobileApp, "Application Component\nMobile App")
+Application_Component(loanSvc, "Application Component\nLoan Application Service")
+Application_Component(decisionEngine, "Application Component\nDecision Engine")
+Application_Component(policyEngine, "Application Component\nPolicy Engine")
+Application_Component(scoreAdapter, "Application Component\nCredit Scoring Adapter")
+Application_Component(disburseAdapter, "Application Component\nDisbursement Adapter")
+Application_Component(esb, "Application Component\nESB Integration Layer")
+Application_Component(decisionStore, "Application Component\nDecision Store")
+Application_Component(auditLog, "Application Component\nAudit Log")
+Application_Component(scoreSystem, "Application Component\nCredit Scoring System")
+Application_Component(coreBanking, "Application Component\nCore Banking")
+
+' === Assignment: Node runs components ===
+Rel_Assignment(mobileTier, mobileApp, "assignment")
+Rel_Assignment(lendingTier, loanSvc, "assignment")
+Rel_Assignment(lendingTier, decisionEngine, "assignment")
+Rel_Assignment(lendingTier, policyEngine, "assignment")
+Rel_Assignment(integrationTier, scoreAdapter, "assignment")
+Rel_Assignment(integrationTier, disburseAdapter, "assignment")
+Rel_Assignment(integrationTier, esb, "assignment")
+Rel_Assignment(dataTier, decisionStore, "assignment")
+Rel_Assignment(dataTier, auditLog, "assignment")
+Rel_Assignment(externalTier, scoreSystem, "assignment")
+Rel_Assignment(externalTier, coreBanking, "assignment")
+
+legend bottom
+  Logical runtime structure for the digital lending platform.
+  Application components are assigned to technology nodes and connected through integration services.
+  Teaching diagram — redraw in Archi for the dossier.
+endlegend
+@enduml

@@ -1,0 +1,68 @@
+@startuml nopbai-business-process
+!include <archimate/Archimate>
+title Business Process — Mobile Personal Loan Product
+caption Nopbai Architecture Modeling Language — Mobile Personal Loan sample
+top to bottom direction
+
+' === Actors and Roles ===
+Business_Actor(custActor, "Business Actor BUS.ACT.01\nCustomer")
+Business_Role(appRole, "Business Role BUS.ROL.01\nLoan Applicant")
+
+' === Business Services ===
+Business_Service(svcApp, "Business Service BUS.SVC.01\nLoan application intake")
+Business_Service(svcEligibility, "Business Service BUS.SVC.02\nEligibility and scoring")
+Business_Service(svcOffer, "Business Service BUS.SVC.03\nOffer and pricing")
+Business_Service(svcDecision, "Business Service BUS.SVC.04\nAuto decisioning")
+Business_Service(svcDisburse, "Business Service BUS.SVC.05\nDisbursement and accounting")
+Business_Service(svcAudit, "Business Service BUS.SVC.06\nDecision traceability")
+
+' === Process steps ===
+Business_Process(procSubmit, "Business Process BUS.PROC.01\nSubmit loan request")
+Business_Process(procCheck, "Business Process BUS.PROC.02\nValidate customer and eligibility")
+Business_Process(procScore, "Business Process BUS.PROC.03\nRetrieve credit score")
+Business_Process(procCalc, "Business Process BUS.PROC.04\nCalculate max amount and rate")
+Business_Process(procOffer, "Business Process BUS.PROC.05\nPresent offer")
+Business_Process(procDecision, "Business Process BUS.PROC.06\nApply automatic decision")
+Business_Process(procValidate, "Business Process BUS.PROC.07\nValidate account")
+Business_Process(procDisburse, "Business Process BUS.PROC.08\nDisburse and post accounting")
+Business_Process(procAudit, "Business Process BUS.PROC.09\nPersist decision evidence")
+
+' === Business Objects ===
+Business_Object(objApp, "Business Object BUS.OBJ.01\nLoan Application")
+Business_Object(objScore, "Business Object BUS.OBJ.02\nCredit Score")
+Business_Object(objOffer, "Business Object BUS.OBJ.03\nLoan Offer")
+Business_Object(objDecision, "Business Object BUS.OBJ.04\nDecision Record")
+
+' === Assignment and serving ===
+Rel_Assignment(custActor, appRole, "assignment")
+Rel_Assignment(appRole, procSubmit, "assignment")
+Rel_Realization(procSubmit, svcApp, "realization")
+Rel_Realization(procCheck, svcEligibility, "realization")
+Rel_Realization(procScore, svcEligibility, "realization")
+Rel_Realization(procCalc, svcOffer, "realization")
+Rel_Realization(procDecision, svcDecision, "realization")
+Rel_Realization(procDisburse, svcDisburse, "realization")
+Rel_Realization(procAudit, svcAudit, "realization")
+
+' === Triggering flow ===
+Rel_Triggering_Down(procSubmit, procCheck, "triggering")
+Rel_Triggering_Down(procCheck, procScore, "triggering")
+Rel_Triggering_Down(procScore, procCalc, "triggering")
+Rel_Triggering_Down(procCalc, procOffer, "triggering")
+Rel_Triggering_Down(procOffer, procDecision, "triggering")
+Rel_Triggering_Down(procDecision, procValidate, "triggering: approved")
+Rel_Triggering_Down(procValidate, procDisburse, "triggering: valid account")
+Rel_Triggering_Down(procDisburse, procAudit, "triggering")
+
+' === Access to objects ===
+Rel_Access(procSubmit, objApp, "access: create")
+Rel_Access(procScore, objScore, "access: read")
+Rel_Access(procOffer, objOffer, "access: create")
+Rel_Access(procDecision, objDecision, "access: write")
+
+legend bottom
+  E2E flow: Submit → Validate → Score → Calculate offer → Decide → Validate account → Disburse → Audit.
+  Decision quality and auditability are built into the process.
+  Teaching diagram — redraw in Archi for the dossier.
+endlegend
+@enduml
