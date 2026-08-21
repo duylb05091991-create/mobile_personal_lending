@@ -1,0 +1,18 @@
+@startuml lab-8-motivation-after
+!include <archimate/Archimate>
+title Lab 8 Motivation — Nopbai Mobile Personal Loan
+left to right direction
+Motivation_Goal(goal, "Goal\nProvide automated mobile personal lending")
+Motivation_Outcome(outcome, "Outcome\nASSUMPTION: standard decision P95 <= 30 seconds")
+Motivation_Constraint(con1, "CON.1\nAmount <= 100,000,000 VND")
+Motivation_Constraint(con2, "CON.2\nExisting salaried customers aged 22-35")
+Motivation_Constraint(con3, "CON.3\nNear-real-time scoring")
+Motivation_Constraint(con4, "CON.4\nApproval and validation before posting")
+Motivation_Constraint(con5, "CON.5\nProtected and auditable evidence")
+Rel_Association_Down(goal, outcome, "association")
+Rel_Association_Down(con1, goal, "constraint")
+Rel_Association_Down(con2, goal, "constraint")
+Rel_Association_Down(con3, goal, "constraint")
+Rel_Association_Down(con4, goal, "constraint")
+Rel_Association_Down(con5, goal, "constraint")
+@enduml

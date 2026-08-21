@@ -1,0 +1,22 @@
+@startuml lab-5-limit-increase
+actor Customer
+participant "Mobile App" as MobileApp
+participant "Decision Engine" as DecisionEngine
+participant "Policy Engine" as PolicyEngine
+database "Decision Store" as DecisionStore
+collections "Audit Log" as AuditLog
+
+Customer -> MobileApp: request limit increase recommendation
+MobileApp -> DecisionEngine: evaluate existing customer
+DecisionEngine -> PolicyEngine: evaluate segment and policy
+alt CON.2 customer outside segment
+  PolicyEngine --> DecisionEngine: reject recommendation
+  DecisionEngine -> DecisionStore: record Rejected
+  DecisionEngine -> AuditLog: record exception
+else eligible customer
+  PolicyEngine --> DecisionEngine: eligible result
+  DecisionEngine -> DecisionStore: persist Loan Offer recommendation
+  DecisionEngine -> AuditLog: record recommendation
+  DecisionEngine --> MobileApp: present recommendation
+end
+@enduml

@@ -1,0 +1,19 @@
+@startuml lab-9-c4-context
+title C4 Context (L1) — Nopbai Personal Loan Platform
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+actor Customer
+rectangle "Nopbai Personal Loan Platform\nsystem in focus" as Platform #E8F1FB
+rectangle "Credit Scoring System\nexternal" as Scoring #F5F5F5
+rectangle "ESB Integration Layer\nexternal" as Esb #F5F5F5
+rectangle "Core Banking\nexternal" as Core #F5F5F5
+Customer --> Platform : submits Loan Application
+Customer --> Platform : reviews Loan Offer and accepts agreement
+Platform --> Scoring : requests Credit Score
+Platform --> Esb : sends approved accounting and disbursement request
+Esb --> Core : routes validation, posting, and confirmation
+legend bottom
+  C4 Context L1 only: no internal containers or protocols.
+endlegend
+@enduml

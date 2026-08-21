@@ -1,0 +1,28 @@
+@startuml lab-6-ecosystem
+left to right direction
+actor Customer
+rectangle "Mobile App" as MobileApp
+rectangle "Loan Application Service" as LoanApplicationService
+rectangle "Credit Scoring Adapter" as CreditScoringAdapter
+rectangle "Decision Engine" as DecisionEngine
+rectangle "Policy Engine" as PolicyEngine
+rectangle "Account Validation Service" as AccountValidationService
+rectangle "Disbursement Adapter" as DisbursementAdapter
+rectangle "Decision Store" as DecisionStore
+rectangle "Audit Log" as AuditLog
+rectangle "Credit Scoring System\nexternal" as CreditScoringSystem
+rectangle "ESB Integration Layer\nexternal" as Esb
+rectangle "Core Banking\nexternal" as CoreBanking
+
+Customer --> MobileApp : application
+MobileApp --> LoanApplicationService : HTTPS sync
+LoanApplicationService --> DecisionEngine : internal sync
+DecisionEngine --> CreditScoringAdapter : internal sync
+CreditScoringAdapter --> CreditScoringSystem : HTTPS sync\nGet Credit Score
+DecisionEngine --> PolicyEngine : internal sync
+DecisionEngine --> DecisionStore : persistence sync
+DecisionEngine --> AuditLog : evidence sync
+AccountValidationService --> DisbursementAdapter : internal sync
+DisbursementAdapter --> Esb : message async\nSubmit request
+Esb --> CoreBanking : message async + confirmation\nValidate and post
+@enduml

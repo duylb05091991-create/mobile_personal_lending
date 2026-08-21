@@ -568,29 +568,29 @@ Fill for **your team’s topic** (Lab 1). Complete every cell. These strings bec
 
 | Field | Your value |
 |-------|------------|
-| Group | Team 4 |
+| Group | Team 4: Nguyễn Cương Quyết (TN), Vũ Thế Quân, Lý Bá Duy, Nguyễn Thanh Hải, Nguyễn Minh Hoàng |
 | Topic / initiative name | Nopbai Mobile Personal Loan |
 | System-in-focus | Nopbai Personal Loan Platform |
 | Goal | Provide a mobile-first unsecured personal loan journey with automated, policy-controlled decisioning and immediate disbursement. |
 | Outcome (measurable) | ASSUMPTION: return an automated loan decision within P95 <= 30 seconds for standard applications. |
 | Product | Nopbai Mobile Personal Loan |
 | Contract | Nopbai Personal Loan Agreement |
-| Baseline -> target | Manual or fragmented assessment -> automated mobile application, decision, and disbursement flow. |
-| In scope | Existing salaried customers aged 22-35; unsecured loans up to 100,000,000 VND; mobile application; scoring; policy-based limit and rate; offer; auto approval or rejection; account validation; disbursement; accounting through ESB Integration Layer to Core Banking; decision traceability. |
+| Baseline → target | Manual or fragmented assessment -> automated mobile application, decision, and disbursement flow. |
+| In scope | Existing salaried customers aged 22-35; unsecured loans up to 100,000,000 VND; Mobile App; Loan Application Service; Credit Scoring Adapter and Credit Scoring System integration; Decision Engine; Policy Engine; Loan Offer; limit-increase recommendation; auto approval or rejection; Account Validation Service; Disbursement Adapter; ESB Integration Layer to Core Banking; Decision Store; Audit Log. |
 | Out of scope | Secured loans; business or SME loans; branch onboarding; non-salaried customers; manual underwriting on the standard path; production implementation details; real customer data; production credentials. |
 
 ## I-2. Actors
 
 | Name | ArchiMate | C4 (Person or —) | Role in the process |
 |------|-----------|------------------|---------------------|
-| Customer | Business Actor | Person | Submits the application, reviews the offer, and accepts the Nopbai Personal Loan Agreement. |
+| Customer | Business Actor | Person | Submits the application, reviews the Loan Offer, and accepts the Nopbai Personal Loan Agreement. |
 | Loan Operations Specialist | Business Actor | Person | Reviews only policy exceptions and reconciliation cases; not part of the standard approval path. |
 
 ## I-3. External systems
 
 | Name (simulated) | Responsibility |
 |------------------|----------------|
-| Credit Scoring System | Returns a near-real-time credit score for an existing customer. |
+| Credit Scoring System | Returns a near-real-time Credit Score for an existing customer. |
 | ESB Integration Layer | Routes accounting and disbursement messages between the platform and Core Banking. |
 | Core Banking | Validates the payment account and records ledger and disbursement outcomes. |
 
@@ -602,14 +602,14 @@ Same strings on ArchiMate Application Cooperation and C4 Container.
 
 | Name | Responsibility |
 |------|----------------|
-| Mobile App | Captures applications, displays offers and decisions, and collects agreement acceptance. |
-| Loan Application Service | Validates and manages submitted loan applications. |
+| Mobile App | Captures applications, displays Loan Offers and decisions, and collects agreement acceptance. |
+| Loan Application Service | Validates and manages submitted Loan Applications. |
 | Credit Scoring Adapter | Requests and normalizes responses from Credit Scoring System. |
 | Decision Engine | Orchestrates eligibility, score, policy, offer, and approval or rejection decisions. |
 | Policy Engine | Applies configurable eligibility, amount, rate, and approval rules. |
 | Account Validation Service | Confirms that the customer payment account is eligible before disbursement. |
 | Disbursement Adapter | Creates an idempotent disbursement request and handles the posting outcome. |
-| Decision Store | Persists score, policy basis, calculations, offer, and decision records. |
+| Decision Store | Persists score, policy basis, calculations, Loan Offers, and decision records. |
 | Audit Log | Persists decision, integration, and transaction evidence for audit. |
 
 ## I-5. Business process (happy path)
@@ -617,10 +617,11 @@ Same strings on ArchiMate Application Cooperation and C4 Container.
 Numbered steps. Name the business object that moves.
 
 1. Customer uses Mobile App to submit a Loan Application.
-2. Loan Application Service validates the application and sends it through Decision Engine, Credit Scoring Adapter, and Policy Engine.
-3. Decision Engine creates an offer, returns it through Mobile App, and records the decision in Decision Store and Audit Log.
-4. Customer accepts the Nopbai Personal Loan Agreement; Account Validation Service validates the payment account.
-5. Disbursement Adapter sends the approved disbursement through ESB Integration Layer to Core Banking, which confirms the outcome.
+2. Loan Application Service validates the Loan Application and sends it through Decision Engine, Credit Scoring Adapter, and Policy Engine.
+3. Decision Engine creates a Loan Offer, returns it through Mobile App, and records decision evidence in Decision Store and Audit Log.
+4. Customer accepts the Nopbai Personal Loan Agreement.
+5. Account Validation Service validates the customer payment account.
+6. Disbursement Adapter sends the approved request through ESB Integration Layer to Core Banking, which confirms the disbursement and accounting outcome.
 
 **Principle / hard rules** (what must never happen):
 
@@ -633,18 +634,18 @@ Numbered steps. Name the business object that moves.
 
 **Object:** Loan Application (one business / data object — not a container)
 
-| State | Trigger / event | Next state | Terminal? |
+| From state | Trigger / event | Next state | Next state terminal? |
 |-------|-----------------|------------|-----------|
 | Draft | Customer starts an application | Submitted | No |
 | Submitted | Customer submits through Mobile App | Scoring | No |
-| Scoring | Credit Scoring Adapter returns a score | OfferReady | No |
-| OfferReady | Decision Engine produces a policy-compliant offer and Customer accepts it | Approved | No |
-| OfferReady | Decision Engine finds a policy breach or Customer declines the offer | Rejected | Yes |
+| Scoring | Credit Scoring Adapter returns a Credit Score | OfferReady | No |
+| Scoring | Credit Scoring System times out or is unavailable (`CON.3`) | Failed | Yes |
+| OfferReady | Customer accepts the Nopbai Personal Loan Agreement | Approved | No |
+| OfferReady | Policy cap or other decision rule rejects the Loan Offer (`CON.1`) | Rejected | Yes |
 | Approved | Account Validation Service confirms the payment account | AccountValidated | No |
-| AccountValidated | Customer accepts the Nopbai Personal Loan Agreement | Disbursed | No |
-| Rejected | Decision Engine rejects the application or a policy constraint fails | Rejected | Yes |
-| Disbursed | Core Banking confirms the accounting and payment outcome | Disbursed | Yes |
-| Failed | Scoring, account validation, or accounting failure cannot be compensated | Failed | Yes |
+| Approved | Account validation fails (`CON.4`) | Failed | Yes |
+| AccountValidated | Disbursement Adapter sends the request and Core Banking confirms the outcome | Disbursed | Yes |
+| AccountValidated | Core Banking posting or confirmation fails (`CON.4`) | Failed | Yes |
 
 **Terminal states** (list them; every machine needs at least one):
 
@@ -660,6 +661,7 @@ Use these exact state strings on the UML State machine (Lab 5 / Lab 10) and in t
 | Customer Profile | Existing customer, income, and account information | Core Banking |
 | Credit Score | Risk score used by decisioning | Credit Scoring System |
 | Policy Configuration | Eligibility, amount, rate, and decision rules | Policy Engine |
+| Loan Offer | Proposed amount, rate, and repayment terms | Decision Store |
 | Decision Record | Score, policy basis, calculations, offer, and final decision | Decision Store |
 | Disbursement Record | Account validation and posting outcome | Core Banking |
 
@@ -676,7 +678,7 @@ Use these exact state strings on the UML State machine (Lab 5 / Lab 10) and in t
 | Location | What runs there |
 |----------|-----------------|
 | Customer mobile device | Mobile App |
-| Lending application runtime | Loan Application Service, Decision Engine, Policy Engine, Account Validation Service, Credit Scoring Adapter, Disbursement Adapter |
+| Lending application runtime | Loan Application Service, Credit Scoring Adapter, Decision Engine, Policy Engine, Account Validation Service, Disbursement Adapter |
 | Evidence data store | Decision Store, Audit Log |
 | External banking integration zone | Credit Scoring System, ESB Integration Layer, Core Banking |
 
@@ -686,9 +688,9 @@ Forbidden path: Mobile App must not write directly to Core Banking or perform cr
 
 | ID | Constraint | Effect on the process |
 |----|------------|------------------------|
-| CON.1 | Unsecured loan amount must not exceed 100,000,000 VND. | Decision Engine rejects or escalates an application whose calculated amount exceeds the cap. |
+| CON.1 | Unsecured loan amount must not exceed 100,000,000 VND. | Decision Engine rejects the Loan Offer when the calculated amount exceeds the cap. |
 | CON.2 | Only existing salaried customers aged 22-35 are in the initial segment. | Loan Application Service rejects applications outside the product segment before decisioning. |
-| CON.3 | Credit scoring must return near-real-time data; timeout is a controlled exception. | Credit Scoring Adapter sends a timeout outcome to Decision Engine, which rejects or routes the case to Loan Operations Specialist according to policy. |
+| CON.3 | Credit scoring must return near-real-time data; timeout is a controlled exception. | Credit Scoring Adapter sends a timeout outcome to Decision Engine, which records Failed and does not approve. |
 | CON.4 | No disbursement or accounting posting before approval and successful account validation. | Account Validation Service must succeed before Disbursement Adapter sends a request through ESB Integration Layer. |
 | CON.5 | Customer data and decision evidence must be protected and auditable. | Services enforce authenticated and authorized access and write traceability to Decision Store and Audit Log. |
 
@@ -696,8 +698,9 @@ Forbidden path: Mobile App must not write directly to Core Banking or perform cr
 
 | Use case | Happy path | At least one exception (`alt`) |
 |----------|------------|--------------------------------|
-| Submit and Decide Loan Application | Customer submits through Mobile App; Loan Application Service validates; Decision Engine obtains score, applies Policy Engine, creates offer, and records decision. | `alt CON.3`: Credit Scoring System timeout -> controlled rejection or exception handling; no approval. |
-| Disburse Approved Loan Application | Customer accepts Nopbai Personal Loan Agreement; Account Validation Service succeeds; Disbursement Adapter sends through ESB Integration Layer; Core Banking confirms. | `alt CON.4`: account validation or accounting confirmation fails -> no disbursement or reconciliation; record Failed. |
+| Submit and Decide Loan Application | Customer submits through Mobile App; Loan Application Service validates; Decision Engine obtains Credit Score, applies Policy Engine, creates Loan Offer, and records decision evidence. | `alt CON.3`: Credit Scoring System timeout -> record Failed; no approval. |
+| Disburse Approved Loan Application | Customer accepts Nopbai Personal Loan Agreement; Account Validation Service succeeds; Disbursement Adapter sends through ESB Integration Layer; Core Banking confirms. | `alt CON.4`: account validation or accounting confirmation fails -> record Failed; no disbursement completion. |
+| Recommend Limit Increase | Decision Engine evaluates an eligible existing customer and creates a recommendation through Mobile App. | `alt CON.2`: customer is outside the initial segment -> reject the recommendation. |
 
 **One container** for optional C4 Component (circle one): Decision Engine
 

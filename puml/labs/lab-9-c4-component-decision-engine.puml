@@ -1,0 +1,31 @@
+@startuml lab-9-c4-component-decision-engine
+title C4 Component (L3) — Decision Engine
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+rectangle "Decision Engine" as DecisionEngine #E8F1FB
+component "Eligibility Coordinator" as EligibilityCoordinator
+component "Scoring Result Handler" as ScoringResultHandler
+component "Offer Calculator" as OfferCalculator
+component "Decision Evaluator" as DecisionEvaluator
+component "Limit Increase Recommender" as LimitIncreaseRecommender
+component "Decision Evidence Writer" as DecisionEvidenceWriter
+rectangle "Loan Application Service\nblack box" as LoanApplicationService
+rectangle "Credit Scoring Adapter\nblack box" as CreditScoringAdapter
+rectangle "Policy Engine\nblack box" as PolicyEngine
+database "Decision Store\nblack box" as DecisionStore
+collections "Audit Log\nblack box" as AuditLog
+
+LoanApplicationService --> EligibilityCoordinator : validated application
+EligibilityCoordinator --> CreditScoringAdapter : request score
+CreditScoringAdapter --> ScoringResultHandler : score or timeout
+ScoringResultHandler --> OfferCalculator : score
+OfferCalculator --> PolicyEngine : policy calculation
+PolicyEngine --> DecisionEvaluator : result
+DecisionEvaluator --> LimitIncreaseRecommender : eligible customer
+DecisionEvaluator --> DecisionEvidenceWriter : decision
+LimitIncreaseRecommender --> DecisionEvidenceWriter : recommendation
+DecisionEvidenceWriter --> DecisionStore : persist
+DecisionEvidenceWriter --> AuditLog : audit
+@enduml

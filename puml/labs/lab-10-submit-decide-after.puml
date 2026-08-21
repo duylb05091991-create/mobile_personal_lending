@@ -1,0 +1,33 @@
+@startuml lab-10-submit-decide-after
+title Lab 10 UML Sequence — Submit and Decide Loan Application
+actor Customer
+participant "Mobile App" as MobileApp
+participant "Loan Application Service" as LoanApplicationService
+participant "Decision Engine" as DecisionEngine
+participant "Credit Scoring Adapter" as CreditScoringAdapter
+participant "Policy Engine" as PolicyEngine
+database "Decision Store" as DecisionStore
+collections "Audit Log" as AuditLog
+
+Customer -> MobileApp: submit Loan Application
+MobileApp -> LoanApplicationService: validate and create
+LoanApplicationService -> DecisionEngine: start decision
+DecisionEngine -> CreditScoringAdapter: get Credit Score
+alt CON.3 timeout
+  CreditScoringAdapter --> DecisionEngine: Failed
+  DecisionEngine -> DecisionStore: record Failed
+  DecisionEngine -> AuditLog: record exception
+else score returned
+  CreditScoringAdapter --> DecisionEngine: Credit Score
+  DecisionEngine -> PolicyEngine: calculate amount and rate
+  alt CON.1 over cap
+    PolicyEngine --> DecisionEngine: Rejected
+    DecisionEngine -> DecisionStore: record Rejected
+  else compliant
+    PolicyEngine --> DecisionEngine: Loan Offer
+    DecisionEngine -> DecisionStore: persist Decision Record
+    DecisionEngine -> AuditLog: persist evidence
+    DecisionEngine --> MobileApp: return Loan Offer
+  end
+end
+@enduml

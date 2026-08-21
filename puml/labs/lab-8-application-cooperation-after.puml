@@ -1,0 +1,28 @@
+@startuml lab-8-application-cooperation-after
+!include <archimate/Archimate>
+title Lab 8 Application Cooperation — Nopbai Mobile Personal Loan
+left to right direction
+Application_Component(mobileApp, "Application Component\nMobile App")
+Application_Component(loanService, "Application Component\nLoan Application Service")
+Application_Component(scoreAdapter, "Application Component\nCredit Scoring Adapter")
+Application_Component(decisionEngine, "Application Component\nDecision Engine")
+Application_Component(policyEngine, "Application Component\nPolicy Engine")
+Application_Component(accountValidation, "Application Component\nAccount Validation Service")
+Application_Component(disbursementAdapter, "Application Component\nDisbursement Adapter")
+Application_Component(decisionStore, "Application Component\nDecision Store")
+Application_Component(auditLog, "Application Component\nAudit Log")
+Application_Component(scoring, "Application Component\nCredit Scoring System (external)")
+Application_Component(esb, "Application Component\nESB Integration Layer (external)")
+Application_Component(core, "Application Component\nCore Banking (external)")
+Rel_Serving(loanService, mobileApp, "serving: submit")
+Rel_Serving(decisionEngine, loanService, "serving: decide")
+Rel_Serving(scoreAdapter, decisionEngine, "serving: score")
+Rel_Serving(scoring, scoreAdapter, "serving: external score")
+Rel_Serving(policyEngine, decisionEngine, "serving: policy")
+Rel_Serving(decisionEngine, decisionStore, "serving: persist")
+Rel_Serving(decisionEngine, auditLog, "serving: evidence")
+Rel_Serving(accountValidation, decisionEngine, "serving: validate")
+Rel_Serving(disbursementAdapter, accountValidation, "serving: disburse")
+Rel_Serving(esb, disbursementAdapter, "serving: route")
+Rel_Serving(core, esb, "serving: confirm")
+@enduml
