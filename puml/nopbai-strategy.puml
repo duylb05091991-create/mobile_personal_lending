@@ -1,29 +1,23 @@
 @startuml nopbai-strategy
 !include <archimate/Archimate>
-title Strategy — Mobile Personal Loan Product
-caption Nopbai Architecture Modeling Language — Mobile Personal Loan sample
+title Strategy — Nopbai Mobile Personal Loan
 top to bottom direction
 
-Motivation_Outcome(out1, "Outcome MOT.OUT.01\nNear real-time loan decisions")
-Motivation_Outcome(out2, "Outcome MOT.OUT.02\nHigher conversion and lower manual underwriting")
+Motivation_Outcome(outcomeTime, "Outcome\nASSUMPTION: decision P95 <= 30 seconds")
+Motivation_Outcome(outcomeOffer, "Outcome\nPolicy-compliant amount and rate")
+Motivation_Outcome(outcomeFunds, "Outcome\nDisbursement after approval and validation")
+Motivation_Outcome(outcomeAudit, "Outcome\nAuditable decision and transaction evidence")
+Strategy_Capability(capIntake, "Capability\nLoan application intake")
+Strategy_Capability(capScore, "Capability\nEligibility and scoring")
+Strategy_Capability(capPolicy, "Capability\nPolicy and offer calculation")
+Strategy_Capability(capDecision, "Capability\nAutomated decisioning")
+Strategy_Capability(capDisburse, "Capability\nAccount validation and disbursement")
+Strategy_Capability(capEvidence, "Capability\nDecision traceability and audit")
 
-Strategy_Capability(cap1, "Capability STR.CAP.01\nLoan application intake")
-Strategy_Capability(cap2, "Capability STR.CAP.02\nEligibility and credit assessment")
-Strategy_Capability(cap3, "Capability STR.CAP.03\nPolicy-based offer and pricing")
-Strategy_Capability(cap4, "Capability STR.CAP.04\nAuto-decision and approval")
-Strategy_Capability(cap5, "Capability STR.CAP.05\nDisbursement and accounting orchestration")
-Strategy_Capability(cap6, "Capability STR.CAP.06\nDecision traceability and audit")
-
-Rel_Realization_Down(out1, cap1, "realization")
-Rel_Realization_Down(out1, cap2, "realization")
-Rel_Realization_Down(out2, cap3, "realization")
-Rel_Realization_Down(out2, cap4, "realization")
-Rel_Realization_Down(out2, cap5, "realization")
-Rel_Realization_Down(out2, cap6, "realization")
-
-legend bottom
-  Strategy realizes the desired outcomes.
-  Mobile loan flow is driven by application intake, scoring, policy pricing, approval, disbursement, and evidence retention.
-  Teaching diagram — redraw in Archi for the dossier.
-endlegend
+Rel_Realization(outcomeTime, capIntake, "realization")
+Rel_Realization(outcomeTime, capScore, "realization")
+Rel_Realization(outcomeOffer, capPolicy, "realization")
+Rel_Realization(outcomeOffer, capDecision, "realization")
+Rel_Realization(outcomeFunds, capDisburse, "realization")
+Rel_Realization(outcomeAudit, capEvidence, "realization")
 @enduml

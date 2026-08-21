@@ -1,78 +1,53 @@
 @startuml nopbai-motivation
 !include <archimate/Archimate>
-title Motivation — Mobile Personal Loan Product
-caption Nopbai Architecture Modeling Language — Mobile Personal Loan sample
+title Motivation — Nopbai Mobile Personal Loan
 left to right direction
 
-Motivation_Stakeholder(stkCustomer, "Stakeholder\nCustomer")
-Motivation_Stakeholder(stkOwner, "Stakeholder\nBank Owner")
-Motivation_Stakeholder(stkRisk, "Stakeholder\nRisk / Compliance")
+Motivation_Stakeholder(customer, "Stakeholder\nCustomer")
+Motivation_Stakeholder(owner, "Stakeholder\nBusiness Owner")
+Motivation_Stakeholder(risk, "Stakeholder\nRisk and Compliance")
+Motivation_Driver(driverFast, "Driver\nNeed for fast mobile lending")
+Motivation_Driver(driverControl, "Driver\nNeed for controlled personalized lending")
+Motivation_Driver(driverEvidence, "Driver\nNeed for secure accounting evidence")
+Motivation_Goal(goalJourney, "Goal\nProvide mobile-first unsecured lending")
+Motivation_Goal(goalDecision, "Goal\nAutomate policy-controlled decisioning")
+Motivation_Goal(goalDisburse, "Goal\nDisburse approved loans reliably")
+Motivation_Goal(goalAudit, "Goal\nPreserve explainable evidence")
+Motivation_Outcome(outcomeTime, "Outcome\nASSUMPTION: decision P95 <= 30 seconds")
+Motivation_Outcome(outcomeOffer, "Outcome\nPolicy-compliant amount and rate")
+Motivation_Outcome(outcomeFunds, "Outcome\nDisbursement after approval and validation")
+Motivation_Outcome(outcomeAudit, "Outcome\nAuditable decision and transaction evidence")
+Motivation_Requirement(fr01, "Requirement\nFR-01 Mobile App submission")
+Motivation_Requirement(fr03, "Requirement\nFR-03 Credit Score retrieval")
+Motivation_Requirement(fr07, "Requirement\nFR-07 Auto decisioning")
+Motivation_Requirement(fr09, "Requirement\nFR-09 Immediate disbursement")
+Motivation_Requirement(fr10, "Requirement\nFR-10 Accounting through ESB")
+Motivation_Requirement(fr11, "Requirement\nFR-11 Decision traceability")
+Motivation_Constraint(con1, "Constraint CON.1\nAmount <= 100,000,000 VND")
+Motivation_Constraint(con2, "Constraint CON.2\nExisting salaried customers aged 22-35")
+Motivation_Constraint(con3, "Constraint CON.3\nNear-real-time scoring")
+Motivation_Constraint(con4, "Constraint CON.4\nApproval and validation before posting")
+Motivation_Constraint(con5, "Constraint CON.5\nProtected and auditable evidence")
 
-Motivation_Driver(drv1, "Driver MOT.DRV.01\nNeed for faster digital loan decisions")
-Motivation_Driver(drv2, "Driver MOT.DRV.02\nNeed to personalize lending offers")
-Motivation_Driver(drv3, "Driver MOT.DRV.03\nNeed for secure and auditable accounting integration")
-Motivation_Driver(drv4, "Driver MOT.DRV.04\nNeed for immediate access to approved funds")
-
-Motivation_Goal(goal1, "Goal MOT.GOAL.01\nDeliver mobile-first personal loan journey")
-Motivation_Goal(goal2, "Goal MOT.GOAL.02\nAutomate eligibility and decisioning")
-Motivation_Goal(goal3, "Goal MOT.GOAL.03\nPersonalize amount and rate")
-Motivation_Goal(goal4, "Goal MOT.GOAL.04\nEnsure reliable accounting and disbursement")
-Motivation_Goal(goal5, "Goal MOT.GOAL.05\nMaintain traceability, security, and compliance")
-
-Motivation_Outcome(out1, "Outcome MOT.OUT.01\nNear real-time loan decisions")
-Motivation_Outcome(out2, "Outcome MOT.OUT.02\nHigher conversion with less manual underwriting")
-Motivation_Outcome(out3, "Outcome MOT.OUT.03\nPolicy-compliant personalized offer")
-Motivation_Outcome(out4, "Outcome MOT.OUT.04\nImmediate disbursement after approval")
-Motivation_Outcome(out5, "Outcome MOT.OUT.05\nAudit-ready credit and accounting evidence")
-
-Motivation_Requirement(req1, "Requirement MOT.REQ.01\nFR-01 mobile application submission")
-Motivation_Requirement(req2, "Requirement MOT.REQ.02\nFR-03 credit score retrieval")
-Motivation_Requirement(req3, "Requirement MOT.REQ.03\nFR-04 eligible amount calculation")
-Motivation_Requirement(req4, "Requirement MOT.REQ.04\nFR-05 personalized interest rate")
-Motivation_Requirement(req5, "Requirement MOT.REQ.05\nFR-07 auto decisioning")
-Motivation_Requirement(req6, "Requirement MOT.REQ.06\nFR-09 immediate disbursement")
-Motivation_Requirement(req7, "Requirement MOT.REQ.07\nFR-10 accounting via ESB to Core Banking")
-Motivation_Requirement(req8, "Requirement MOT.REQ.08\nFR-11 decision traceability")
-
-Motivation_Constraint(con1, "Constraint MOT.CON.01\nMax unsecured loan = 100,000,000 VND")
-Motivation_Constraint(con2, "Constraint MOT.CON.02\nExisting salaried customers aged 22-35")
-Motivation_Constraint(con3, "Constraint MOT.CON.03\nNear real-time credit scoring integration")
-Motivation_Constraint(con4, "Constraint MOT.CON.04\nSecurity, privacy, and auditability")
-
-Rel_Association_Down(stkCustomer, drv1, "association")
-Rel_Association_Down(stkOwner, drv2, "association")
-Rel_Association_Down(stkRisk, drv3, "association")
-Rel_Association_Down(stkOwner, drv4, "association")
-
-Rel_Influence_Down(drv1, goal1, "influence")
-Rel_Influence_Down(drv2, goal2, "influence")
-Rel_Influence_Down(drv2, goal3, "influence")
-Rel_Influence_Down(drv3, goal4, "influence")
-Rel_Influence_Down(drv4, goal5, "influence")
-
-Rel_Association_Down(goal1, out1, "association")
-Rel_Association_Down(goal2, out2, "association")
-Rel_Association_Down(goal3, out3, "association")
-Rel_Association_Down(goal4, out4, "association")
-Rel_Association_Down(goal5, out5, "association")
-
-Rel_Association_Down(goal1, req1, "association")
-Rel_Association_Down(goal2, req2, "association")
-Rel_Association_Down(goal3, req3, "association")
-Rel_Association_Down(goal3, req4, "association")
-Rel_Association_Down(goal2, req5, "association")
-Rel_Association_Down(goal4, req6, "association")
-Rel_Association_Down(goal4, req7, "association")
-Rel_Association_Down(goal5, req8, "association")
-
-Rel_Association_Down(req3, con1, "association")
-Rel_Association_Down(req1, con2, "association")
-Rel_Association_Down(req2, con3, "association")
-Rel_Association_Down(req8, con4, "association")
-
-legend bottom
-  Goal: fast, mobile, automated, auditable lending.
-  One product, one policy-based decision flow.
-  Teaching diagram — redraw in Archi for the dossier.
-endlegend
+Rel_Association(customer, driverFast, "association")
+Rel_Association(owner, driverControl, "association")
+Rel_Association(risk, driverEvidence, "association")
+Rel_Influence(driverFast, goalJourney, "influence")
+Rel_Influence(driverControl, goalDecision, "influence")
+Rel_Influence(driverEvidence, goalAudit, "influence")
+Rel_Association(goalJourney, outcomeTime, "association")
+Rel_Association(goalDecision, outcomeOffer, "association")
+Rel_Association(goalDisburse, outcomeFunds, "association")
+Rel_Association(goalAudit, outcomeAudit, "association")
+Rel_Realization(goalJourney, fr01, "realization")
+Rel_Realization(goalDecision, fr03, "realization")
+Rel_Realization(goalDecision, fr07, "realization")
+Rel_Realization(goalDisburse, fr09, "realization")
+Rel_Realization(goalDisburse, fr10, "realization")
+Rel_Realization(goalAudit, fr11, "realization")
+Rel_Association(con1, goalDecision, "constraint")
+Rel_Association(con2, goalJourney, "constraint")
+Rel_Association(con3, goalDecision, "constraint")
+Rel_Association(con4, goalDisburse, "constraint")
+Rel_Association(con5, goalAudit, "constraint")
 @enduml

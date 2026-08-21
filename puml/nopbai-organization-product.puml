@@ -1,68 +1,34 @@
 @startuml nopbai-organization-product
 !include <archimate/Archimate>
-title Organization & Product — Mobile Personal Loan Product
-caption Nopbai Architecture Modeling Language — Mobile Personal Loan sample
+title Organization and Product — Nopbai Mobile Personal Loan
 top to bottom direction
 
-' === Business Actors ===
-Business_Actor(custActor, "Business Actor BUS.ACT.01\nCustomer")
-Business_Actor(bankActor, "Business Actor BUS.ACT.02\nBank")
-Business_Actor(scoreActor, "Business Actor BUS.ACT.03\nCredit Scoring System")
-Business_Actor(coreActor, "Business Actor BUS.ACT.04\nCore Banking")
+Business_Actor(customer, "Business Actor\nCustomer")
+Business_Actor(operations, "Business Actor\nLoan Operations Specialist")
+Business_Role(applicant, "Business Role\nLoan Applicant")
+Business_Role(exceptionReviewer, "Business Role\nException Reviewer")
+Business_Interface(product, "Product\nNopbai Mobile Personal Loan")
+Business_Service(intake, "Business Service\nLoan application intake")
+Business_Service(decision, "Business Service\nOffer calculation and decisioning")
+Business_Service(disbursement, "Business Service\nAccount validation and disbursement")
+Business_Service(traceability, "Business Service\nDecision traceability")
+Business_Object(application, "Business Object\nLoan Application")
+Business_Object(offer, "Business Object\nLoan Offer")
+Business_Object(agreement, "Business Object\nNopbai Personal Loan Agreement")
+Business_Object(record, "Business Object\nDecision Record")
 
-' === Business Roles ===
-Business_Role(appRole, "Business Role BUS.ROL.01\nLoan Applicant")
-Business_Role(riskRole, "Business Role BUS.ROL.02\nRisk & Credit Evaluator")
-Business_Role(opRole, "Business Role BUS.ROL.03\nLoan Operations")
-
-' === Product ===
-Business_Interface(product, "Product BUS.PRD.01\nMobile Personal Loan")
-
-' === Business Services ===
-Business_Service(svcApp, "Business Service BUS.SVC.01\nLoan application intake")
-Business_Service(svcScoring, "Business Service BUS.SVC.02\nEligibility and scoring")
-Business_Service(svcOffer, "Business Service BUS.SVC.03\nOffer calculation")
-Business_Service(svcDecide, "Business Service BUS.SVC.04\nAuto decisioning")
-Business_Service(svcDisburse, "Business Service BUS.SVC.05\nDisbursement and accounting")
-Business_Service(svcAudit, "Business Service BUS.SVC.06\nDecision traceability")
-
-' === Business Objects ===
-Business_Object(objApp, "Business Object BUS.OBJ.01\nLoan Application")
-Business_Object(objScore, "Business Object BUS.OBJ.02\nCredit Score")
-Business_Object(objOffer, "Business Object BUS.OBJ.03\nLoan Offer")
-Business_Object(objDecision, "Business Object BUS.OBJ.04\nDecision Record")
-
-' === Role assignment ===
-Rel_Assignment(custActor, appRole, "assignment")
-Rel_Assignment(bankActor, riskRole, "assignment")
-Rel_Assignment(bankActor, opRole, "assignment")
-
-' === Product composition ===
-Rel_Composition(product, svcApp, "composition")
-Rel_Composition(product, svcScoring, "composition")
-Rel_Composition(product, svcOffer, "composition")
-Rel_Composition(product, svcDecide, "composition")
-Rel_Composition(product, svcDisburse, "composition")
-Rel_Composition(product, svcAudit, "composition")
-
-' === Service serving ===
-Rel_Serving(svcApp, appRole, "serving")
-Rel_Serving(svcScoring, riskRole, "serving")
-Rel_Serving(svcOffer, opRole, "serving")
-Rel_Serving(svcDecide, opRole, "serving")
-Rel_Serving(svcDisburse, opRole, "serving")
-Rel_Serving(svcAudit, riskRole, "serving")
-
-' === Associations ===
-Rel_Association(objApp, product, "association")
-Rel_Association(objScore, product, "association")
-Rel_Association(objOffer, product, "association")
-Rel_Association(objDecision, product, "association")
-
-legend bottom
-  Product is a mobile personal loan.
-  Customer is the applicant; bank owns the product and operations.
-  Credit scoring and Core Banking are external actors in the business context.
-  Teaching diagram — redraw in Archi for the dossier.
-endlegend
+Rel_Assignment(customer, applicant, "assignment")
+Rel_Assignment(operations, exceptionReviewer, "assignment")
+Rel_Composition(product, intake, "composition")
+Rel_Composition(product, decision, "composition")
+Rel_Composition(product, disbursement, "composition")
+Rel_Composition(product, traceability, "composition")
+Rel_Serving(intake, applicant, "serving")
+Rel_Serving(decision, applicant, "serving")
+Rel_Serving(disbursement, applicant, "serving")
+Rel_Serving(traceability, exceptionReviewer, "serving")
+Rel_Association(application, product, "association")
+Rel_Association(offer, product, "association")
+Rel_Association(agreement, product, "association")
+Rel_Association(record, product, "association")
 @enduml
