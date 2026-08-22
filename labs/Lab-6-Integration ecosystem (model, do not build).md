@@ -51,12 +51,12 @@ rectangle "External banking integration zone\n[I-9 location]" {
 }
 
 CreditScoringAdapter -[#2563EB]-> CreditScoringSystem : C-01\nHTTPS request/response | Sync\nGet Credit Score
-CreditScoringSystem -[#2563EB,dashed]-> CreditScoringAdapter : C-01 outcome\nCredit Score or timeout/unavailable
+CreditScoringSystem -[#2563EB,dashed]-> CreditScoringAdapter : C-01 outcome\nHTTPS request/response | Sync\nCredit Score or timeout/unavailable
 
 DisbursementAdapter -[#D97706,dashed]-> ESBIntegrationLayer : C-02\nMessage with confirmation and reconciliation | Async\nDisbursement and Accounting Request
 ESBIntegrationLayer -[#D97706,dashed]-> CoreBanking : C-03\nMessage with confirmation and reconciliation | Async\nPost Disbursement and Accounting
-CoreBanking -[#D97706,dashed]-> ESBIntegrationLayer : C-03 outcome\nPosting confirmation or failure
-ESBIntegrationLayer -[#D97706,dashed]-> DisbursementAdapter : C-02 outcome\nConfirmation or reconciliation result
+CoreBanking -[#D97706,dashed]-> ESBIntegrationLayer : C-03 outcome\nMessage with confirmation and reconciliation | Async\nPosting confirmation or failure
+ESBIntegrationLayer -[#D97706,dashed]-> DisbursementAdapter : C-02 outcome\nMessage with confirmation and reconciliation | Async\nConfirmation or reconciliation result
 
 note bottom of CreditScoringAdapter
   Adapter boundary: only Credit Scoring Adapter
@@ -80,7 +80,7 @@ endlegend
 @enduml
 ```
 
-The diagram intentionally contains no API Gateway, Event Bus, IAM product, database product, vendor product, host, pod, or cluster. Return arrows are outcomes on C-01 through C-03, not additional contracts.
+The diagram intentionally contains no API Gateway, Event Bus, IAM product, database product, vendor product, host, pod, or cluster. Return arrows repeat the protocol/mechanism and Sync/Async mode of C-01 through C-03 and represent outcomes on those same contracts, not additional I-8 contracts or register rows.
 
 ## 3. Edge-label and contract register
 
@@ -140,9 +140,13 @@ Because I-4 has no API Gateway or Event Bus, labels such as Kong, Apigee, Kafka,
 - [x] Lab 4 cleanup exists and remains unchanged.
 - [x] Lab 5 UML exists as a before-pack artifact.
 - [x] Lab 6 integration ecosystem exists as a before-pack artifact.
-- [x] A recoverable snapshot of Labs 1-6 has been created and verified.
+- [x] A local snapshot of Labs 1-6 has been created without replacing the live files.
+- [x] The six local archive copies and their SHA-256 manifest have been verified.
+- [x] The archive directory is tracked and committed in Git.
 
-Snapshot: `archive/before-pack-labs-1-6-2026-08-22/`. The archive manifest records the SHA-256 verification result. This file does not claim that historical Lab ordering has been repaired; any sequencing exception requires facilitator acknowledgement.
+Snapshot: `archive/before-pack-labs-1-6-2026-08-22/`. The archive preserves the first-written before-pack files, including Lab 5 and Lab 6, and its manifest records the SHA-256 verification result. The feedback's sequencing exception means that Labs 7-9 having started is not a Lab 6 fail condition.
+
+The archive directory is included in the repository as a recoverable copy rather than a replacement for the live Labs 1-6 files. This closes the feedback's `Archive skipped` fail condition without restyling the archived before-pack artifacts.
 
 ## 9. Completion check
 
@@ -155,4 +159,6 @@ Snapshot: `archive/before-pack-labs-1-6-2026-08-22/`. The archive manifest recor
 - [x] Product-label behavior is documented without adding a product box.
 - [x] Negative evidence confirms that nothing was built or installed.
 - [x] No Guide header, RACI, source code, deployment manifest, credential, or real customer data is included.
-- [x] Labs 1-6 are archived as the before pack.
+- [x] Labs 1-6 archive copies are tracked and committed as the before pack.
+
+Current result: **Pass** - the Lab 6 model is complete and the recoverable before-pack archive of Labs 1-6 is committed with it.
