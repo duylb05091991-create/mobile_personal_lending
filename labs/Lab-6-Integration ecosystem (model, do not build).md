@@ -16,6 +16,40 @@ Only elements that already exist in I-4 may be modeled as internal containers. I
 
 ## 2. Ecosystem sketch
 
+```mermaid
+flowchart LR
+    subgraph Runtime["Lending application runtime [I-9 location]"]
+        CreditScoringAdapter["<b>Credit Scoring Adapter</b><br/>&lt;&lt;I-4 Adapter Container&gt;&gt;"]
+        DisbursementAdapter["<b>Disbursement Adapter</b><br/>&lt;&lt;I-4 Adapter Container&gt;&gt;"]
+    end
+
+    subgraph External["External banking integration zone [I-9 location]"]
+        CreditScoringSystem["<b>Credit Scoring System</b><br/>&lt;&lt;I-3 External System&gt;&gt;"]
+        ESBIntegrationLayer["<b>ESB Integration Layer</b><br/>&lt;&lt;I-3 External System&gt;&gt;"]
+        CoreBanking["<b>Core Banking</b><br/>&lt;&lt;I-3 External System&gt;&gt;"]
+    end
+
+    CreditScoringAdapter -- "<b>C-01</b><br/>HTTPS request/response | Sync<br/>Get Credit Score" --> CreditScoringSystem
+    CreditScoringSystem -. "<b>C-01 outcome</b><br/>HTTPS request/response | Sync<br/>Credit Score or timeout/unavailable" .-> CreditScoringAdapter
+
+    DisbursementAdapter -. "<b>C-02</b><br/>Message with confirmation &amp; reconciliation | Async<br/>Disbursement and Accounting Request" .-> ESBIntegrationLayer
+    ESBIntegrationLayer -. "<b>C-03</b><br/>Message with confirmation &amp; reconciliation | Async<br/>Post Disbursement and Accounting" .-> CoreBanking
+    CoreBanking -. "<b>C-03 outcome</b><br/>Message with confirmation &amp; reconciliation | Async<br/>Posting confirmation or failure" .-> ESBIntegrationLayer
+    ESBIntegrationLayer -. "<b>C-02 outcome</b><br/>Message with confirmation &amp; reconciliation | Async<br/>Confirmation or reconciliation result" .-> DisbursementAdapter
+
+    classDef internal fill:#DBEAFE,stroke:#2563EB,stroke-width:1.5px,color:#111827;
+    classDef external fill:#F3F4F6,stroke:#6B7280,stroke-width:1.5px,color:#111827;
+    class CreditScoringAdapter,DisbursementAdapter internal;
+    class CreditScoringSystem,ESBIntegrationLayer,CoreBanking external;
+```
+
+> **Adapter boundary notes:**
+> - **Credit Scoring Adapter:** Adapter boundary: only Credit Scoring Adapter crosses the Credit Scoring System contract (`C-01`).
+> - **Disbursement Adapter:** Adapter boundary: only Disbursement Adapter enters ESB for disbursement and accounting (`C-02` / `C-03`). The asynchronous wire protocol is not specified by the approved inputs.
+
+<details>
+<summary><b>PlantUML Source (Click to expand)</b></summary>
+
 ```plantuml
 @startuml
 title Nopbai Personal Loan Platform - Integration Ecosystem (Model Only)
@@ -79,6 +113,8 @@ endlegend
 
 @enduml
 ```
+
+</details>
 
 The diagram intentionally contains no API Gateway, Event Bus, IAM product, database product, vendor product, host, pod, or cluster. Return arrows repeat the protocol/mechanism and Sync/Async mode of C-01 through C-03 and represent outcomes on those same contracts, not additional I-8 contracts or register rows.
 
