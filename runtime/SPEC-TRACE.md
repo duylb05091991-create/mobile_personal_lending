@@ -9,18 +9,18 @@ Specification authority is Lab 1 I-1 through I-11, the Labs 8-10 after pack, the
 | I-11 `Submit and Decide Loan Application` | `POST /loan-applications:submit-and-decide` | `submitAndDecideLoanApplication` | `200` | Application operation / Sync envelope | `CAP-I11-01`, `CAP-A01`, `CAP-A02`, `CAP-A03`, `CAP-N01`, `CAP-N04`, `CAP-N07`, `CAP-P95-01`, `CAP-OAS-01` |
 | I-11 `Disburse Approved Loan Application` | `POST /loan-applications/{loanApplicationId}:disburse` | `disburseApprovedLoanApplication` | `200` | Application operation; internally preserves C-02/C-03 Async | `CAP-I11-02`, `CAP-A04`, `CAP-A05`, `CAP-N02`, `CAP-N03`, `CAP-N07`, `CAP-OAS-01` |
 | I-11 `Recommend Limit Increase` | `POST /customers/{customerId}:recommend-limit-increase` | `recommendLimitIncrease` | `200` | Application operation / Sync envelope | `CAP-I11-03`, `CAP-A06`, `CAP-A07`, `CAP-OAS-01` |
-| C-01 `Get Credit Score` | `POST /integration/credit-scoring:get-credit-score` | `getCreditScore` | `200` | HTTPS request/response / Sync | `CAP-C01`, `CAP-OAS-01` |
-| C-02 `Disbursement and Accounting Request` | `POST /integration/disbursements:request` | `disbursementAndAccountingRequest` | `202` | Message with confirmation and reconciliation / Async | `CAP-C02`, `CAP-N09`, `CAP-OAS-01` |
-| C-03 `Post Disbursement and Accounting` | `POST /integration/disbursements:post` | `postDisbursementAndAccounting` | `202` | Message with confirmation and reconciliation / Async | `CAP-C03`, `CAP-N10`, `CAP-OAS-01` |
+| C-01 `Get Credit Score` | `POST /integration/credit-scoring:get-credit-score` | `getCreditScore` | `200` | HTTPS request/response / Sync | `CAP-C01`, `CAP-N05`, `CAP-OAS-01` |
+| C-02 `Disbursement and Accounting Request` | `POST /integration/disbursements:request` | `disbursementAndAccountingRequest` | `202` | Message with confirmation and reconciliation / Async | `CAP-C02`, `CAP-N06`, `CAP-N09`, `CAP-OAS-01` |
+| C-03 `Post Disbursement and Accounting` | `POST /integration/disbursements:post` | `postDisbursementAndAccounting` | `202` | Message with confirmation and reconciliation / Async | `CAP-C03`, `CAP-N06`, `CAP-N10`, `CAP-OAS-01` |
 
-There are exactly six paths, each with exactly one `POST` operation. `CAP-OAS-01` compares the runtime route and request-contract registers with `openapi.json`, including methods, `operationId`, exact `summary` / `x-model-operation`, status sets, required fields, allowed properties, primitive types, and enums. It also executes malformed requests to prove the runtime does not silently accept payloads outside the committed schema.
+There are exactly six paths, each with exactly one `POST` operation. `CAP-OAS-01` compares the runtime route and request-contract registers with `openapi.json`, including methods, `operationId`, exact `summary` / `x-model-operation`, status sets, required fields, allowed properties, primitive types, enums, and the integration-only exact `X-Caller` requirement. It also executes malformed requests to prove the runtime does not silently accept payloads outside the committed schema.
 
 ## I-11 happy paths and drawn alternatives
 
 | Test ID | G6 source | Use case | Trigger | Expected state/result and compensation | SUT |
 |---|---|---|---|---|---|
 | `CAP-I11-01` | I-11 happy path | `Submit and Decide Loan Application` | Eligible salaried existing customer aged 22-35, successful score, accepted policy and amount <= 100,000,000 VND | `Loan Offer` and decision evidence are persisted; state reaches `OfferReady`; response is `200` | `Decision Engine` |
-| `CAP-I11-02` | I-11 happy path | `Disburse Approved Loan Application` | Approved application, accepted agreement, eligible account, confirmed posting | Account is validated; C-02/C-03 pass through the in-process async queue; `Core Banking` fake creates the `Disbursement Record` reference; state reaches `Disbursed`; response is `200` | `Disbursement Adapter` |
+| `CAP-I11-02` | I-11 happy path | `Disburse Approved Loan Application` | A distinct internal `Mobile App -> Loan Application Service` step accepts the agreement and reaches `Approved`; the existing public disbursement operation then receives an eligible account and confirmed posting | Account is validated; C-02/C-03 pass through the in-process async queue; `Core Banking` fake creates the `Disbursement Record` reference; state reaches `Disbursed`; response is `200` | `Disbursement Adapter` |
 | `CAP-I11-03` | I-11 happy path | `Recommend Limit Increase` | Eligible existing customer and accepted policy/amount | The existing I-7 `Loan Offer` is stored in `Decision Store` and returned with `200`; no recommendation identity is created | `Decision Engine` |
 | `CAP-A01` | `G6-A01` | `Submit and Decide Loan Application` | `CON.2`: outside initial segment | `Loan Application Service` rejects `Submitted -> Rejected` before calling `Decision Engine`; scoring/approval are skipped and rejection evidence is appended | `Loan Application Service` |
 | `CAP-A02` | `G6-A02` | `Submit and Decide Loan Application` | `CON.3`: scoring timeout/unavailable | `Credit Scoring Adapter` returns controlled failure; decisioning stops, state becomes `Failed`, approval is absent, and timeout evidence is appended; response is `503` | `Credit Scoring Adapter` |
@@ -49,7 +49,7 @@ This table is the G5 executable compensation specification: each `CAP-A*` assert
 | `CAP-S11` | `G6-S11` / `T-11` | `AccountValidated -> Disbursed` | Confirmed ESB/Core Banking outcome | `Disbursement Adapter` |
 | `CAP-S12` | `G6-S12` / `T-12` | `AccountValidated -> Failed` | `CON.4` posting/confirmation failure | `Disbursement Adapter` |
 
-All state tests exercise the typed `Loan Application` object. Terminal states remain exactly `Rejected`, `Disbursed`, and `Failed`; the tests do not expose additional public paths.
+All state tests exercise the typed `Loan Application` object. Every asserted transition must match ordered lifecycle history and Audit Log evidence containing the exact I-4 `performed_by` participant and `written_by: Loan Application Service`; the named SUT must also contain operation-level evidence for the same application. `CAP-I11-01` proves the ordered submit sequence and `CAP-I11-02` proves all six ordered happy-path transitions through `Disbursed`. Terminal states remain exactly `Rejected`, `Disbursed`, and `Failed`; the tests do not expose additional public paths.
 
 ## Contract, hard-rule, and quality evidence
 
@@ -59,16 +59,16 @@ All state tests exercise the typed `Loan Application` object. Terminal states re
 | `CAP-C02` | C-02 `Disbursement and Accounting Request` | Only `Disbursement Adapter` puts the request on the in-process queue; accepted envelope is `202`; mode remains Message with confirmation and reconciliation / Async |
 | `CAP-C03` | C-03 `Post Disbursement and Accounting` | Only `ESB Integration Layer` invokes the `Core Banking` fake through the queue; accepted envelope is `202`; the returned reference remains owned by `Core Banking` |
 | `CAP-N01` | I-5 approval prerequisites | Attempts to skip segment eligibility, scoring, accepted policy, or maximum-amount calculation are rejected under `CON.1`, `CON.2`, or `CON.3`; no `Approved`/`Disbursed` result is possible |
-| `CAP-N02` | I-5 / `CON.4` approval and product-purpose preconditions | Disbursement of a missing/not-approved `Loan Application`, or of the `limit-increase` lifecycle used only by `Recommend Limit Increase`, returns `422 CON.4`; state is retained and no ESB/Core Banking activity occurs |
+| `CAP-N02` | I-5 / `CON.4` approval and product-purpose preconditions | The real disbursement operation is called for a normal personal-loan application still in `OfferReady`; it returns `422 CON.4`, performs no implicit acceptance, retains state/history, and calls neither account validation, ESB, nor Core Banking. The same operation also rejects the `limit-increase` lifecycle |
 | `CAP-N03` | I-5 / `CON.4` account-validation precondition | A failed account validation cannot reach `Disbursement Adapter`; response is `422 CON.4` and downstream state is unchanged |
 | `CAP-N04` | I-5 / `CON.1` amount cap | An amount greater than 100,000,000 VND returns `422 CON.1`, creates no `Loan Offer`, and cannot approve |
-| `CAP-N05` | I-5 / I-9 forbidden credit evaluation | Test attempts credit evaluation from `Mobile App`; the unregistered path is rejected and the scoring fake call count is unchanged |
-| `CAP-N06` | I-5 / I-9 forbidden Core Banking write | Test attempts a `Mobile App` -> `Core Banking` write; the unregistered path is rejected and Core Banking fake state is unchanged |
+| `CAP-N05` | I-5 / I-9 forbidden credit evaluation | `Mobile App` posts a valid body to the real C-01 operation with `X-Caller: Mobile App`; runtime returns audited `403 CON.5` before dispatch and both `Credit Scoring Adapter` and `Credit Scoring System` counts remain unchanged |
+| `CAP-N06` | I-5 / I-9 forbidden integration path | With a real owner-held `AccountValidated` application, `Mobile App` posts valid bodies to the real C-02 and C-03 operations; each returns audited `403 CON.5`, `Disbursement Adapter`/ESB/Core counts stay unchanged, and a legitimate pending C-02 message is not consumed by the forbidden C-03 attempt |
 | `CAP-N07` | `CON.5` authorization and auditability | A false `X-Simulated-Authorized` call returns `403 CON.5`, retains the exact state, touches no downstream fake, and appends security evidence |
 | `CAP-N08` | I-7 single ownership | Mutation of a defensive `Loan Application` view cannot change the owner-held aggregate; `Decision Store` has no application collection |
 | `CAP-N09` | C-02 / `CON.4` owner-state precondition | A direct C-02 caller cannot assert `account_validated=true` to bypass the actual `Loan Application Service`-owned `AccountValidated` state or alter the owner-held amount; runtime returns `502 CON.4` and queues nothing |
 | `CAP-N10` | C-03 / `CON.4` pending-message and owner-state precondition | A direct C-03 caller cannot post without an owner-authorized, pending C-02 message for an `AccountValidated` application; runtime returns `502 CON.4` and does not call `Core Banking` |
-| `CAP-OAS-01` | G4 runtime/spec parity | Loaded OpenAPI version is `3.0.3`; exactly six `POST` operations exist; route, `operationId`, exact model string, status sets, and request-field contracts equal the runtime registers; malformed/missing/extra fields are rejected with documented `CON.*` envelopes |
+| `CAP-OAS-01` | G4 runtime/spec parity | Loaded OpenAPI version is `3.0.3`; exactly six `POST` operations exist; route, `operationId`, exact model string, status sets, request fields, and integration-only exact caller constraints equal the runtime registers; malformed/missing/extra fields are rejected with documented `CON.*` envelopes |
 | `CAP-I3-01` | I-3 is mocked | Exactly `Credit Scoring System`, `ESB Integration Layer`, and `Core Banking` are in-process fakes; no real host, socket, credential, or production secret is used |
 | `CAP-P95-01` | I-1 measurable outcome | Multiple standard happy-path decisions are measured and calculated P95 remains <= 30 seconds |
 
@@ -84,13 +84,13 @@ All state tests exercise the typed `Loan Application` object. Terminal states re
 | `nopbai/account_validation_service.py` | I-4 `Account Validation Service`; local read-only account input; `CON.4` | `CAP-A04`, `CAP-S09`, `CAP-S10` |
 | `nopbai/disbursement_adapter.py` | I-4 `Disbursement Adapter`; C-02; `CON.4` reconciliation | `CAP-I11-02`, `CAP-A05`, `CAP-C02`, `CAP-C03`, `CAP-S11`, `CAP-S12`, `CAP-N09`, `CAP-N10` |
 | `nopbai/decision_store.py` | I-4 `Decision Store`; I-7 `Loan Offer` and `Decision Record` | `CAP-I11-01`, `CAP-I11-03`, `CAP-A03`, `CAP-A07` |
-| `nopbai/audit_log.py` | I-4 `Audit Log`; `CON.5` evidence | `CAP-A01..A07`, `CAP-N07` |
-| `nopbai/application.py` | Three exact I-11 application operations and composition | `CAP-I11-01..03`, `CAP-A01..A07` |
+| `nopbai/audit_log.py` | I-4 `Audit Log`; lifecycle performer/writer evidence and `CON.5` denial evidence | `CAP-A01..A07`, `CAP-S01..S12`, `CAP-N05..N07` |
+| `nopbai/application.py` | Three exact I-11 application operations, composition, and real-route `CON.5` modeled-caller enforcement | `CAP-I11-01..03`, `CAP-A01..A07`, `CAP-N05`, `CAP-N06`, `CAP-OAS-01` |
 | `nopbai/domain.py` | Typed I-6 `Loan Application` and nine exact states under the I-7 owner | `CAP-S01..S12`, `CAP-N08` |
 | `nopbai/fakes.py` | Three exact I-3 black boxes; C-01 through C-03; in-process bus | `CAP-C01..C03`, `CAP-I3-01`, `CAP-N02`, `CAP-N03`, `CAP-N05..N07`, `CAP-N09`, `CAP-N10` |
-| `nopbai/routing.py` | Exactly six frozen operations, request shapes, and stable status/error form | `CAP-C01..C03`, `CAP-I11-01..03`, `CAP-N01..N07`, `CAP-N09`, `CAP-N10`, `CAP-OAS-01` |
-| `nopbai/identities.py` | Exact Lab 1 / Lab 10 strings | `CAP-OAS-01`, `CAP-I3-01` |
-| `nopbai/errors.py` | Stable `CON.*` error envelope | `CAP-A01..A07`, `CAP-N01..N04`, `CAP-N07`, `CAP-OAS-01` |
+| `nopbai/routing.py` | Exactly six frozen operations, request shapes, exact C-01/C-02/C-03 callers, and stable status/error form | `CAP-C01..C03`, `CAP-I11-01..03`, `CAP-N01..N07`, `CAP-N09`, `CAP-N10`, `CAP-OAS-01` |
+| `nopbai/identities.py` | Exact Lab 1 / Lab 10 strings and exact transition-performer mapping | `CAP-S01..S12`, `CAP-OAS-01`, `CAP-I3-01` |
+| `nopbai/errors.py` | Stable `CON.*` error envelope | `CAP-A01..A07`, `CAP-N01..N07`, `CAP-OAS-01` |
 | `nopbai/__main__.py` | Local simulation transport for the required demonstration; not a new I-4 identity | README live requests plus the same application paths covered by `CAP-I11-01` and `CAP-A02` |
 | `tests/test_capstone_runtime.py` | Executable G4-G6, I-11, G5, I-5/I-9, I-7, I-3, and P95 evidence | All 38 stable IDs: `CAP-I11-01..03`, `CAP-A01..A07`, `CAP-C01..C03`, `CAP-S01..S12`, `CAP-N01..N10`, `CAP-OAS-01`, `CAP-I3-01`, `CAP-P95-01` |
 | `openapi.json` | G4 public contract for exactly the six frozen operations | `CAP-OAS-01`, with operation execution in `CAP-I11-01..03` and `CAP-C01..C03` |

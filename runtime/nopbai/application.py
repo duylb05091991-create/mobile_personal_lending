@@ -83,14 +83,27 @@ class RuntimeApplication:
 
     @staticmethod
     def _authorized(headers):
-        normalized = {str(key).lower(): str(value) for key, value in headers.items()}
-        return normalized.get("x-simulated-authorized") == "true"
+        return RuntimeApplication._header_value(
+            headers, "X-Simulated-Authorized"
+        ) == "true"
+
+    @staticmethod
+    def _header_value(headers, name):
+        expected = name.lower()
+        for key, value in headers.items():
+            if str(key).lower() == expected:
+                return str(value)
+        return None
 
     def _state_for_request(self, path, body):
         match = self._disburse_pattern.match(path)
-        loan_application_id = match.group(1) if match else body.get("loan_application_id")
+        loan_application_id = (
+            match.group(1) if match else body.get("loan_application_id")
+        )
         if loan_application_id:
-            application = self.loan_application_service.get_application(loan_application_id)
+            application = self.loan_application_service.get_application(
+                loan_application_id
+            )
             if application:
                 return application["state"]
         return None
@@ -106,6 +119,30 @@ class RuntimeApplication:
             "CON.5",
             reason,
             {"path": path},
+        )
+        return 403, ConstraintViolation("CON.5", reason, state, 403).body()
+
+    def _deny_caller(self, route_key, path, body, headers):
+        route = self.route_registry[route_key]
+        required = route["allowedCaller"]
+        actual = self._header_value(headers, "X-Caller")
+        state = self._state_for_request(path, body)
+        subject_id = self._subject_for_request(path, body)
+        reason = "Forbidden caller: X-Caller must be {0} for {1}".format(
+            required, route["contractId"]
+        )
+        self.audit_log.append(
+            AUDIT_LOG,
+            "access-denied",
+            subject_id,
+            "CON.5",
+            reason,
+            {
+                "path": path,
+                "actual_caller": actual,
+                "required_caller": required,
+                "contract_id": route["contractId"],
+            },
         )
         return 403, ConstraintViolation("CON.5", reason, state, 403).body()
 
@@ -141,6 +178,13 @@ class RuntimeApplication:
             }
         if not self._authorized(headers):
             return self._deny(path, body)
+        route = self.route_registry[route_key]
+        allowed_caller = route.get("allowedCaller")
+        if (
+            allowed_caller is not None
+            and self._header_value(headers, "X-Caller") != allowed_caller
+        ):
+            return self._deny_caller(route_key, path, body, headers)
         try:
             self._validate_contract(route_key, path, body)
             if path == "/loan-applications:submit-and-decide":
@@ -150,12 +194,17 @@ class RuntimeApplication:
                 return 200, self.mobile_app.disburse(match.group(1), body)
             match = self._recommend_pattern.match(path)
             if match:
-                return 200, self.mobile_app.recommend_limit_increase(match.group(1), body)
+                return 200, self.mobile_app.recommend_limit_increase(
+                    match.group(1), body
+                )
             if path == "/integration/credit-scoring:get-credit-score":
                 score = self.credit_scoring_adapter.get_credit_score(
                     body.get("customer_id"), body.get("scoring_mode", "success"), None
                 )
-                return 200, {"customer_id": body.get("customer_id"), "credit_score": score}
+                return 200, {
+                    "customer_id": body.get("customer_id"),
+                    "credit_score": score,
+                }
             if path == "/integration/disbursements:request":
                 return self._request_disbursement_message(body)
             return self._post_disbursement_message(body)

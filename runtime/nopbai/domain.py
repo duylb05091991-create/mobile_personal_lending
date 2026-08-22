@@ -37,7 +37,16 @@ class LoanApplication:
             "reasons": list(self._reasons),
         }
 
-    def _transition(self, operation, expected, target, constraint=None, reason=None):
+    def _transition(
+        self,
+        operation,
+        expected,
+        target,
+        performed_by,
+        written_by,
+        constraint=None,
+        reason=None,
+    ):
         """Guard and perform one I-6 operation on the aggregate.
 
         Live aggregate instances remain private to Loan Application Service;
@@ -61,6 +70,8 @@ class LoanApplication:
             "loan_application_id": self.loan_application_id,
             "from_state": previous.value,
             "to_state": target.value,
+            "performed_by": performed_by,
+            "written_by": written_by,
             "constraint": constraint,
             "reason": reason,
         }

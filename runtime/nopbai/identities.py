@@ -68,3 +68,20 @@ TRANSITION_OPERATIONS = (
     "fail_posting",
 )
 
+# Lab 10's exact participant-to-SUT assignment for the twelve I-6 operations.
+# Loan Application Service remains the only writer; this mapping records the
+# modeled I-4 participant that performed the behavior leading to each write.
+TRANSITION_PERFORMERS = {
+    "start_application": MOBILE_APP,
+    "start_scoring": LOAN_APPLICATION_SERVICE,
+    "reject_out_of_segment": LOAN_APPLICATION_SERVICE,
+    "mark_offer_ready": DECISION_ENGINE,
+    "fail_scoring": CREDIT_SCORING_ADAPTER,
+    "approve_agreement": MOBILE_APP,
+    "reject_policy": DECISION_ENGINE,
+    "decline_offer": MOBILE_APP,
+    "validate_account": ACCOUNT_VALIDATION_SERVICE,
+    "fail_account_validation": ACCOUNT_VALIDATION_SERVICE,
+    "complete_disbursement": DISBURSEMENT_ADAPTER,
+    "fail_posting": DISBURSEMENT_ADAPTER,
+}

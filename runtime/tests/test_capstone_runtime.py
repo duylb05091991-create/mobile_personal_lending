@@ -63,6 +63,12 @@ C01_PATH = "/integration/credit-scoring:get-credit-score"
 C02_PATH = "/integration/disbursements:request"
 C03_PATH = "/integration/disbursements:post"
 
+INTEGRATION_CALLERS = {
+    C01_PATH: CREDIT_SCORING_ADAPTER,
+    C02_PATH: DISBURSEMENT_ADAPTER,
+    C03_PATH: "ESB Integration Layer",
+}
+
 OPENAPI_OPERATIONS = {
     SUBMIT_PATH: {
         "operationId": "submitAndDecideLoanApplication",
@@ -83,16 +89,22 @@ OPENAPI_OPERATIONS = {
         "operationId": "getCreditScore",
         "modelOperation": "Get Credit Score",
         "statuses": {"200", "403", "503"},
+        "expectedCaller": CREDIT_SCORING_ADAPTER,
+        "contractId": "C-01",
     },
     C02_PATH: {
         "operationId": "disbursementAndAccountingRequest",
         "modelOperation": "Disbursement and Accounting Request",
         "statuses": {"202", "403", "502"},
+        "expectedCaller": DISBURSEMENT_ADAPTER,
+        "contractId": "C-02",
     },
     C03_PATH: {
         "operationId": "postDisbursementAndAccounting",
         "modelOperation": "Post Disbursement and Accounting",
         "statuses": {"202", "403", "502"},
+        "expectedCaller": "ESB Integration Layer",
+        "contractId": "C-03",
     },
 }
 
@@ -141,11 +153,18 @@ class CapstoneRuntimeTestCase(unittest.TestCase):
 
     def handle(self, method, path, body=None, headers=None, app=None):
         target = app or self.app
+        if headers is None:
+            request_headers = dict(AUTHORIZED)
+            caller = INTEGRATION_CALLERS.get(path)
+            if caller is not None:
+                request_headers["X-Caller"] = caller
+        else:
+            request_headers = headers
         return target.handle(
             method,
             path,
             {} if body is None else body,
-            AUTHORIZED if headers is None else headers,
+            request_headers,
         )
 
     def submit_body(self, customer_id="customer-standard", **overrides):
@@ -189,6 +208,7 @@ class CapstoneRuntimeTestCase(unittest.TestCase):
 
     def disburse_happy(self, loan_application_id, app=None):
         target = app or self.app
+        self.accept_happy(loan_application_id, app=target)
         status, payload = self.handle(
             "POST",
             DISBURSE_TEMPLATE.replace("{loanApplicationId}", loan_application_id),
@@ -210,6 +230,16 @@ class CapstoneRuntimeTestCase(unittest.TestCase):
         self.assertEqual(payload["confirmation"], "confirmed")
         self.assertTrue(payload["disbursement_record_reference"])
         return payload
+
+    def accept_happy(self, loan_application_id, app=None):
+        """Perform the modeled Mobile App -> LAS acceptance before disbursement."""
+        target = app or self.app
+        accepted = target.mobile_app.accept_loan_agreement(loan_application_id)
+        self.assertEqual(accepted["state"], "Approved")
+        self.assertEqual(
+            self.application_state(loan_application_id, app=target), "Approved"
+        )
+        return accepted
 
     def _create_account_validated_application(
         self,
@@ -334,15 +364,116 @@ class CapstoneRuntimeTestCase(unittest.TestCase):
 
     def assert_transition(self, loan_application_id, before, after, sut, app=None):
         with self.subTest(SUT=sut, transition="{} -> {}".format(before, after)):
-            pairs = {
-                pair
-                for pair in (
-                    self.transition_pair(entry)
-                    for entry in self.history(loan_application_id, app=app)
-                )
-                if pair is not None
-            }
-            self.assertIn((before, after), pairs)
+            target = app or self.app
+            self.assertIn(sut, I4_CONTAINERS)
+            matching_history = [
+                entry
+                for entry in self.history(loan_application_id, app=target)
+                if self.transition_pair(entry) == (before, after)
+            ]
+            self.assertTrue(matching_history, "transition evidence is missing")
+            self.assertTrue(
+                any(
+                    entry.get("performed_by") == sut
+                    and entry.get("written_by") == LOAN_APPLICATION_SERVICE
+                    for entry in matching_history
+                    if isinstance(entry, dict)
+                ),
+                "transition must record the exact modeled SUT and LAS writer",
+            )
+            self.assertGreater(
+                target.containers[sut].call_count,
+                0,
+                "the named SUT must execute during the tested behavior",
+            )
+            operation = matching_history[0]["operation"]
+            sut_calls = getattr(target.containers[sut], "calls", [])
+            application = self.application_record(loan_application_id, app=target)
+            customer_id = application["customer_id"]
+
+            def call_matches(call):
+                if not isinstance(call, dict):
+                    return False
+                if operation == "start_application":
+                    return (
+                        call.get("operation")
+                        in {"submit_and_decide", "recommend_limit_increase"}
+                        and call.get("loan_application_id") == loan_application_id
+                    )
+                if operation in {"start_scoring", "reject_out_of_segment"}:
+                    return (
+                        call.get("operation") == operation
+                        and call.get("loan_application_id") == loan_application_id
+                    )
+                if operation == "mark_offer_ready":
+                    return (
+                        call.get("operation")
+                        in {"collect_score", "recommend_offer"}
+                        and call.get("loan_application_id") == loan_application_id
+                    )
+                if operation == "fail_scoring":
+                    return call.get("customer_id") == customer_id
+                if operation == "approve_agreement":
+                    return (
+                        call.get("operation") == "accept_loan_agreement"
+                        and call.get("loan_application_id") == loan_application_id
+                    )
+                if operation == "reject_policy":
+                    return (
+                        call.get("operation") in {"create_offer", "recommend_offer"}
+                        and call.get("loan_application_id") == loan_application_id
+                    )
+                if operation == "decline_offer":
+                    return (
+                        call.get("operation") == "decline_loan_offer"
+                        and call.get("loan_application_id") == loan_application_id
+                    )
+                if operation in {"validate_account", "fail_account_validation"}:
+                    return call.get("loan_application_id") == loan_application_id
+                if operation in {"complete_disbursement", "fail_posting"}:
+                    return (
+                        call.get("operation") == "post"
+                        and call.get("loan_application_id") == loan_application_id
+                    )
+                return False
+
+            self.assertTrue(
+                any(call_matches(call) for call in sut_calls),
+                "the named SUT must contain operation-level evidence for this application",
+            )
+            matching_audit = [
+                event
+                for event in target.audit_log.events
+                if event.get("source") == LOAN_APPLICATION_SERVICE
+                and event.get("subject_id") == loan_application_id
+                and event.get("details", {}).get("from_state") == before
+                and event.get("details", {}).get("to_state") == after
+                and event.get("details", {}).get("performed_by") == sut
+                and event.get("details", {}).get("written_by")
+                == LOAN_APPLICATION_SERVICE
+            ]
+            self.assertTrue(
+                matching_audit,
+                "Audit Log must bind the transition to its SUT and sole writer",
+            )
+
+    def assert_ordered_transitions(self, loan_application_id, expected, app=None):
+        """Assert ordered I-6 state, performer, and sole-writer evidence."""
+        actual = [
+            (
+                entry.get("from_state"),
+                entry.get("to_state"),
+                entry.get("performed_by"),
+                entry.get("written_by"),
+            )
+            for entry in self.history(loan_application_id, app=app)
+            if isinstance(entry, dict)
+        ]
+        expected_with_writer = [
+            (before, after, sut, LOAN_APPLICATION_SERVICE)
+            for before, after, sut in expected
+        ]
+        self.assertEqual(actual, expected_with_writer)
 
     @staticmethod
     def call_total(item):
@@ -385,6 +516,14 @@ class TestI11HappyPaths(CapstoneRuntimeTestCase):
             self.assertIsNotNone(stored_decision)
             self.assert_audit_contains(loan_id, "decision-completed")
             self.assertEqual(payload["loan_offer"], stored_offer)
+            self.assert_ordered_transitions(
+                loan_id,
+                [
+                    ("Draft", "Submitted", MOBILE_APP),
+                    ("Submitted", "Scoring", LOAN_APPLICATION_SERVICE),
+                    ("Scoring", "OfferReady", DECISION_ENGINE),
+                ],
+            )
 
     def test_CAP_I11_02_disburse_approved_happy(self):
         """CAP-I11-02: Disburse Approved Loan Application happy path."""
@@ -398,6 +537,25 @@ class TestI11HappyPaths(CapstoneRuntimeTestCase):
                 self.object_text(core.disbursement_records),
             )
             self.assert_audit_contains(loan_id, "disbursement-confirmed")
+            self.assert_ordered_transitions(
+                loan_id,
+                [
+                    ("Draft", "Submitted", MOBILE_APP),
+                    ("Submitted", "Scoring", LOAN_APPLICATION_SERVICE),
+                    ("Scoring", "OfferReady", DECISION_ENGINE),
+                    ("OfferReady", "Approved", MOBILE_APP),
+                    (
+                        "Approved",
+                        "AccountValidated",
+                        ACCOUNT_VALIDATION_SERVICE,
+                    ),
+                    (
+                        "AccountValidated",
+                        "Disbursed",
+                        DISBURSEMENT_ADAPTER,
+                    ),
+                ],
+            )
 
     def test_CAP_I11_03_recommend_limit_increase_happy(self):
         """CAP-I11-03: Recommend Limit Increase happy path."""
@@ -478,6 +636,7 @@ class TestSequenceAlternativesAndG5(CapstoneRuntimeTestCase):
     def test_CAP_A04_disburse_validation_failure_sends_nothing_downstream(self):
         """CAP-A04: CON.4 validation failure records Failed and sends nothing."""
         loan_id, _ = self.submit_happy("cap-a04")
+        self.accept_happy(loan_id)
         before = self.downstream_snapshot()
         with self.subTest(SUT=ACCOUNT_VALIDATION_SERVICE):
             status, payload = self.handle(
@@ -493,6 +652,7 @@ class TestSequenceAlternativesAndG5(CapstoneRuntimeTestCase):
     def test_CAP_A05_disburse_posting_failure_reconciles_and_does_not_complete(self):
         """CAP-A05: CON.4 posting failure starts reconciliation and stays Failed."""
         loan_id, _ = self.submit_happy("cap-a05")
+        self.accept_happy(loan_id)
         before = self.downstream_snapshot()
         with self.subTest(SUT=DISBURSEMENT_ADAPTER):
             status, payload = self.handle(
@@ -612,7 +772,7 @@ class TestG6StateTransitions(CapstoneRuntimeTestCase):
     def test_CAP_S06_offer_ready_to_approved(self):
         """CAP-S06: OfferReady -> Approved; SUT Mobile App."""
         loan_id, _ = self.submit_happy("cap-s06")
-        self.disburse_happy(loan_id)
+        self.accept_happy(loan_id)
         self.assert_transition(loan_id, "OfferReady", "Approved", MOBILE_APP)
 
     def test_CAP_S07_offer_ready_to_rejected_by_policy(self):
@@ -654,6 +814,7 @@ class TestG6StateTransitions(CapstoneRuntimeTestCase):
     def test_CAP_S10_approved_to_failed(self):
         """CAP-S10: Approved -> Failed CON.4; SUT Account Validation Service."""
         loan_id, _ = self.submit_happy("cap-s10")
+        self.accept_happy(loan_id)
         status, payload = self.handle(
             "POST",
             DISBURSE_TEMPLATE.replace("{loanApplicationId}", loan_id),
@@ -681,6 +842,7 @@ class TestG6StateTransitions(CapstoneRuntimeTestCase):
     def test_CAP_S12_account_validated_to_failed(self):
         """CAP-S12: AccountValidated -> Failed CON.4; SUT Disbursement Adapter."""
         loan_id, _ = self.submit_happy("cap-s12")
+        self.accept_happy(loan_id)
         status, payload = self.handle(
             "POST",
             DISBURSE_TEMPLATE.replace("{loanApplicationId}", loan_id),
@@ -725,15 +887,26 @@ class TestHardRulesAndOwnership(CapstoneRuntimeTestCase):
 
     def test_CAP_N02_disbursement_before_approved_is_rejected(self):
         """CAP-N02: disbursement rejects missing approval or wrong lifecycle purpose."""
+        loan_id, _ = self.submit_happy("cap-n02-personal-loan")
         before = self.downstream_snapshot()
-        with self.subTest(SUT=ACCOUNT_VALIDATION_SERVICE):
+        before_avs_calls = self.app.account_validation_service.call_count
+        before_history = list(self.history(loan_id))
+        with self.subTest(
+            SUT=LOAN_APPLICATION_SERVICE,
+            attempt="personal-loan-before-agreement-acceptance",
+        ):
             status, payload = self.handle(
                 "POST",
-                DISBURSE_TEMPLATE.replace("{loanApplicationId}", "cap-n02-not-approved"),
+                DISBURSE_TEMPLATE.replace("{loanApplicationId}", loan_id),
                 {"account_eligible": True, "posting_mode": "success"},
             )
-            self.assert_error(status, payload, 422, "CON.4", None)
+            self.assert_error(status, payload, 422, "CON.4", "OfferReady")
+            self.assertEqual(self.application_state(loan_id), "OfferReady")
             self.assertEqual(self.downstream_snapshot(), before)
+            self.assertEqual(
+                self.app.account_validation_service.call_count, before_avs_calls
+            )
+            self.assertEqual(self.history(loan_id), before_history)
 
         customer_id = "cap-n02-limit-increase"
         status, recommendation = self.handle(
@@ -770,6 +943,7 @@ class TestHardRulesAndOwnership(CapstoneRuntimeTestCase):
     def test_CAP_N03_disbursement_before_account_validated_is_rejected(self):
         """CAP-N03: I-11 disburse cannot pass failed account validation."""
         loan_id, _ = self.submit_happy("cap-n03")
+        self.accept_happy(loan_id)
         before = self.downstream_snapshot()
         with self.subTest(SUT=DISBURSEMENT_ADAPTER):
             status, payload = self.handle(
@@ -792,36 +966,98 @@ class TestHardRulesAndOwnership(CapstoneRuntimeTestCase):
             self.assertFalse(self.app.decision_store.loan_offers)
 
     def test_CAP_N05_mobile_app_credit_evaluation_attempt_is_rejected(self):
-        """CAP-N05: forbidden Mobile App credit evaluation is rejected."""
-        forbidden_path = "/mobile-app:credit-evaluate"
-        scoring_before = self.call_total(self.app.fakes["Credit Scoring System"])
+        """CAP-N05: Mobile App cannot call the real C-01 operation."""
+        adapter_before = self.app.credit_scoring_adapter.call_count
+        fake_before = self.call_total(self.app.fakes["Credit Scoring System"])
         with self.subTest(SUT=MOBILE_APP):
-            self.assertNotIn(forbidden_path, self.app.route_registry)
-            status, _ = self.handle(
+            self.assertIn(C01_PATH, self.app.route_registry)
+            status, payload = self.handle(
                 "POST",
-                forbidden_path,
-                {"customer_id": "cap-n05"},
+                C01_PATH,
+                {"customer_id": "cap-n05", "scoring_mode": "success"},
+                headers={
+                    "X-Simulated-Authorized": "true",
+                    "X-Caller": MOBILE_APP,
+                },
             )
-            self.assertIn(status, {403, 404})
+            self.assert_error(status, payload, 403, "CON.5", None)
+            self.assertIn(CREDIT_SCORING_ADAPTER, payload["error"]["reason"])
+            self.assertEqual(
+                self.app.credit_scoring_adapter.call_count, adapter_before
+            )
             self.assertEqual(
                 self.call_total(self.app.fakes["Credit Scoring System"]),
-                scoring_before,
+                fake_before,
+            )
+            self.assert_audit_contains(
+                "access-denied", "CON.5", "C-01", MOBILE_APP
             )
 
     def test_CAP_N06_mobile_app_to_core_banking_is_rejected_and_fake_untouched(self):
-        """CAP-N06: forbidden Mobile App -> Core Banking call is rejected."""
-        forbidden_path = "/core-banking:post-from-mobile-app"
-        core = self.app.fakes["Core Banking"]
-        before = self.call_total(core)
-        with self.subTest(SUT=MOBILE_APP):
-            self.assertNotIn(forbidden_path, self.app.route_registry)
-            status, _ = self.handle(
+        """CAP-N06: Mobile App cannot enter real C-02 or C-03 operations."""
+        loan_id, amount = self._create_account_validated_application("cap-n06")
+        request_body = {
+            "loan_application_id": loan_id,
+            "account_validated": True,
+            "amount": amount,
+            "posting_mode": "success",
+        }
+        before_c02 = self.downstream_snapshot()
+        adapter_before_c02 = self.app.disbursement_adapter.call_count
+        with self.subTest(SUT=MOBILE_APP, contract="C-02"):
+            status, payload = self.handle(
                 "POST",
-                forbidden_path,
-                {"loan_application_id": "cap-n06"},
+                C02_PATH,
+                request_body,
+                headers={
+                    "X-Simulated-Authorized": "true",
+                    "X-Caller": MOBILE_APP,
+                },
             )
-            self.assertIn(status, {403, 404})
-            self.assertEqual(self.call_total(core), before)
+            self.assert_error(
+                status, payload, 403, "CON.5", "AccountValidated"
+            )
+            self.assertEqual(self.downstream_snapshot(), before_c02)
+            self.assertEqual(
+                self.app.disbursement_adapter.call_count, adapter_before_c02
+            )
+            self.assert_audit_contains(
+                "access-denied", "CON.5", "C-02", MOBILE_APP
+            )
+
+        request_status, request_payload = self.handle(
+            "POST", C02_PATH, request_body
+        )
+        self.assertEqual(request_status, 202, request_payload)
+        pending_before_c03 = self.object_text(
+            self.app.fakes["ESB Integration Layer"].messages
+        )
+        before_c03 = self.downstream_snapshot()
+        adapter_before_c03 = self.app.disbursement_adapter.call_count
+        with self.subTest(SUT=MOBILE_APP, contract="C-03"):
+            status, payload = self.handle(
+                "POST",
+                C03_PATH,
+                request_body,
+                headers={
+                    "X-Simulated-Authorized": "true",
+                    "X-Caller": MOBILE_APP,
+                },
+            )
+            self.assert_error(
+                status, payload, 403, "CON.5", "AccountValidated"
+            )
+            self.assertEqual(self.downstream_snapshot(), before_c03)
+            self.assertEqual(
+                self.app.disbursement_adapter.call_count, adapter_before_c03
+            )
+            self.assertEqual(
+                self.object_text(self.app.fakes["ESB Integration Layer"].messages),
+                pending_before_c03,
+            )
+            self.assert_audit_contains(
+                "access-denied", "CON.5", "C-03", MOBILE_APP
+            )
 
     def test_CAP_N07_unauthorized_CON5_is_audited_without_state_change(self):
         """CAP-N07: unauthorized CON.5 is denied, audited, and state-safe."""
@@ -1088,10 +1324,35 @@ class TestOpenAPIParity(CapstoneRuntimeTestCase):
                     "{} must require X-Simulated-Authorized".format(path),
                 )
 
+                expected_caller = expected.get("expectedCaller")
+                caller_parameters = [
+                    item
+                    for item in resolved
+                    if item.get("name") == "X-Caller"
+                    and item.get("in") == "header"
+                ]
+                if expected_caller is None:
+                    self.assertEqual(caller_parameters, [])
+                else:
+                    self.assertEqual(len(caller_parameters), 1)
+                    caller_parameter = caller_parameters[0]
+                    self.assertIs(caller_parameter.get("required"), True)
+                    self.assertEqual(
+                        caller_parameter.get("schema", {}).get("enum"),
+                        [expected_caller],
+                    )
+                    self.assertEqual(
+                        operation.get("x-contract-id"), expected["contractId"]
+                    )
+
                 route = self.app.route_registry[path]
                 self.assertEqual(route["method"].upper(), "POST")
                 self.assertEqual(route["path"], path)
                 self.assertEqual(route["operationId"], expected["operationId"])
+                self.assertEqual(route.get("allowedCaller"), expected_caller)
+                self.assertEqual(
+                    route.get("contractId"), expected.get("contractId")
+                )
                 runtime_statuses = {
                     str(value)
                     for value in route.get("successStatuses", [])

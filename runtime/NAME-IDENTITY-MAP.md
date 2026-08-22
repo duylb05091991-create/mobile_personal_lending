@@ -24,7 +24,7 @@ The nine rows above are the complete I-4 set. They are logical module boundaries
 |---|---|---|
 | `nopbai.application` | Composition root and application-operation facade | Helper only; delegates to the nine mapped I-4 modules |
 | `nopbai.domain` | Typed I-6 `Loan Application` aggregate and exact state enumeration | Domain helper under `Loan Application Service` ownership; not a container or second owner |
-| `nopbai.identities` | Exact model strings, six paths, and six operation IDs | Constants only; not a container |
+| `nopbai.identities` | Exact I-4/I-3/I-6 strings, transition operations, and transition-performer mapping | Constants only; not a container |
 | `nopbai.errors` | Stable `CON.*` error envelope | Helper only; not a container or use case |
 | `nopbai.fakes` | The three I-3 fakes and in-process asynchronous simulation | Mock backing services; not I-4 and not production systems |
 | `nopbai.routing` | Dispatch for the six frozen OpenAPI operations | In-process helper; not an API-gateway identity |
@@ -49,13 +49,13 @@ No real host, network call, customer record, vendor contract ID, secret, token, 
 | `Evidence data store` | `Decision Store`, `Audit Log` | In-memory collections, cleared when the process ends |
 | `External banking integration zone` | Fakes labeled `Credit Scoring System`, `ESB Integration Layer`, and `Core Banking` | Simulation only; these fakes are not real deployments |
 
-The I-9 forbidden path is preserved: `Mobile App` has no callable route to `Core Banking` and performs no credit evaluation.
+The I-9 forbidden path is preserved on the real integration operations. C-01 accepts only `X-Caller: Credit Scoring Adapter`, C-02 only `X-Caller: Disbursement Adapter`, and C-03 only `X-Caller: ESB Integration Layer`. `Mobile App` attempts receive audited `403 CON.5` responses before schema validation or dispatch, so no adapter, queue, or external fake is touched.
 
 ## I-7 ownership
 
 | Exact I-7 object | Sole source of truth | Runtime treatment |
 |---|---|---|
-| `Loan Application` | `Loan Application Service` | The typed aggregate and its transitions execute under this service's authority; other modules return inputs or request transitions but do not become owners |
+| `Loan Application` | `Loan Application Service` | The typed aggregate and its transitions execute under this service's authority. Each evidence row distinguishes exact I-4 `performed_by` behavior from the sole `written_by` owner; collaborators never receive a live mutable aggregate |
 | `Customer Profile` | `Core Banking` | The SA-approved account-validation request contains a simulated read-only eligibility input; it neither copies nor moves ownership |
 | `Credit Score` | `Credit Scoring System` | The fake creates the simulated score; `Credit Scoring Adapter` only normalizes it |
 | `Policy Configuration` | `Policy Engine` | Policy and amount-cap rules are enforced here and orchestrated by `Decision Engine` |
@@ -89,8 +89,8 @@ Return values and asynchronous outcome legs use the initiating relationship and 
 
 | ASSUMPTION | One frozen runtime choice |
 |---|---|
-| `ASSUMPTION-01` | The six URL paths, JSON fields, envelope statuses, and `X-Simulated-Authorized` string header are the SA-approved Capstone transport form; they do not add a use case or architectural protocol. |
-| `ASSUMPTION-02` | Literal header value `true` grants simulated access and `false` or absence produces `403 CON.5`; it is a test switch, not a credential. |
+| `ASSUMPTION-01` | The six URL paths, JSON fields, envelope statuses, `X-Simulated-Authorized`, and integration-only `X-Caller` headers are the Capstone transport form; they do not add a use case, container, or architectural protocol. |
+| `ASSUMPTION-02` | Literal authorization value `true` grants simulated access; `false` or absence produces `403 CON.5`. On C-01/C-02/C-03, `X-Caller` must exactly equal the modeled source identity or the runtime returns audited `403 CON.5` before dispatch. These are test controls, not credentials. |
 | `ASSUMPTION-03` | Identifiers, score, offer rate/term, message IDs, and record references are deterministic simulated values suitable only for tests and demonstration. |
 | `ASSUMPTION-04` | C-02 and C-03 are exposed as test-harness envelopes returning `202`; work, confirmation, and reconciliation remain an in-process Message / Async mechanism. |
 | `ASSUMPTION-05` | The account-eligibility Boolean is a simulated read-only input received through `Mobile App`; `Account Validation Service` makes no direct `Core Banking` call. |

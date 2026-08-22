@@ -2,7 +2,7 @@
 
 from .domain import LoanApplication, LoanApplicationState
 from .errors import ConstraintViolation
-from .identities import LOAN_APPLICATION_SERVICE
+from .identities import LOAN_APPLICATION_SERVICE, TRANSITION_PERFORMERS
 
 
 class LoanApplicationService:
@@ -101,13 +101,14 @@ class LoanApplicationService:
             reason = "Customer is outside the existing salaried age 22-35 segment"
             rejected = self._reject_out_of_segment(loan_application_id, reason)
             raise ConstraintViolation("CON.2", reason, rejected["state"], 422)
-        self._start_scoring(loan_application_id)
-        offer_ready = self._mark_offer_ready(loan_application_id)
+        scoring = self._start_scoring(loan_application_id)
         try:
-            offer = self.decision_engine.recommend_offer(offer_ready, None, policy_mode)
+            offer = self.decision_engine.recommend_offer(scoring, None, policy_mode)
         except ConstraintViolation as violation:
+            self._mark_offer_ready(loan_application_id)
             rejected = self._reject_policy(loan_application_id, violation.reason)
             raise ConstraintViolation("CON.1", violation.reason, rejected["state"], 422)
+        self._mark_offer_ready(loan_application_id)
         return self.get_application(loan_application_id), offer
 
     # Public lifecycle commands preserve the modeled container coupling while
@@ -142,7 +143,6 @@ class LoanApplicationService:
             reason or "Posting or confirmation failed",
         )
 
-
     def _require(self, loan_application_id):
         application = self._applications.get(loan_application_id)
         if application is None:
@@ -154,10 +154,25 @@ class LoanApplicationService:
             )
         return application
 
-    def _transition(self, loan_application_id, operation, expected, target, constraint=None, reason=None):
+    def _transition(
+        self,
+        loan_application_id,
+        operation,
+        expected,
+        target,
+        constraint=None,
+        reason=None,
+    ):
         application = self._require(loan_application_id)
+        performed_by = TRANSITION_PERFORMERS[operation]
         evidence = application._transition(
-            operation, expected, target, constraint, reason
+            operation,
+            expected,
+            target,
+            performed_by,
+            self.identity,
+            constraint,
+            reason,
         )
         self.transition_history.append(evidence)
         self.calls.append(evidence.copy())
@@ -175,6 +190,8 @@ class LoanApplicationService:
                 "from_state": evidence["from_state"],
                 "to_state": evidence["to_state"],
                 "operation": operation,
+                "performed_by": evidence["performed_by"],
+                "written_by": evidence["written_by"],
             },
         )
         return application.snapshot()
@@ -182,12 +199,18 @@ class LoanApplicationService:
     # The following are the exact twelve guarded I-6 transition operations.
     def _start_application(self, loan_application_id):
         return self._transition(
-            loan_application_id, "start_application", LoanApplicationState.DRAFT, LoanApplicationState.SUBMITTED
+            loan_application_id,
+            "start_application",
+            LoanApplicationState.DRAFT,
+            LoanApplicationState.SUBMITTED,
         )
 
     def _start_scoring(self, loan_application_id):
         return self._transition(
-            loan_application_id, "start_scoring", LoanApplicationState.SUBMITTED, LoanApplicationState.SCORING
+            loan_application_id,
+            "start_scoring",
+            LoanApplicationState.SUBMITTED,
+            LoanApplicationState.SCORING,
         )
 
     def _reject_out_of_segment(self, loan_application_id, reason):
@@ -206,7 +229,10 @@ class LoanApplicationService:
 
     def _mark_offer_ready(self, loan_application_id):
         return self._transition(
-            loan_application_id, "mark_offer_ready", LoanApplicationState.SCORING, LoanApplicationState.OFFER_READY
+            loan_application_id,
+            "mark_offer_ready",
+            LoanApplicationState.SCORING,
+            LoanApplicationState.OFFER_READY,
         )
 
     def _fail_scoring(self, loan_application_id, reason):

@@ -204,6 +204,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/SimulatedAuthorized"
+          },
+          {
+            "$ref": "#/components/parameters/C01Caller"
           }
         ],
         "requestBody": {
@@ -238,7 +241,7 @@
             }
           },
           "403": {
-            "description": "CON.5 simulated authorization denied and audited",
+            "description": "CON.5 simulated authorization or modeled-caller check denied and audited",
             "content": {
               "application/json": {
                 "schema": {
@@ -260,6 +263,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/SimulatedAuthorized"
+          },
+          {
+            "$ref": "#/components/parameters/C02Caller"
           }
         ],
         "requestBody": {
@@ -294,7 +300,7 @@
             }
           },
           "403": {
-            "description": "CON.5 simulated authorization denied and audited",
+            "description": "CON.5 simulated authorization or modeled-caller check denied and audited",
             "content": {
               "application/json": {
                 "schema": {
@@ -316,6 +322,9 @@
         "parameters": [
           {
             "$ref": "#/components/parameters/SimulatedAuthorized"
+          },
+          {
+            "$ref": "#/components/parameters/C03Caller"
           }
         ],
         "requestBody": {
@@ -350,7 +359,7 @@
             }
           },
           "403": {
-            "description": "CON.5 simulated authorization denied and audited",
+            "description": "CON.5 simulated authorization or modeled-caller check denied and audited",
             "content": {
               "application/json": {
                 "schema": {
@@ -378,6 +387,42 @@
           ]
         },
         "example": "true"
+      },
+      "C01Caller": {
+        "name": "X-Caller",
+        "in": "header",
+        "required": true,
+        "description": "Exact modeled caller permitted to invoke C-01.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "Credit Scoring Adapter"
+          ]
+        }
+      },
+      "C02Caller": {
+        "name": "X-Caller",
+        "in": "header",
+        "required": true,
+        "description": "Exact modeled caller permitted to invoke C-02.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "Disbursement Adapter"
+          ]
+        }
+      },
+      "C03Caller": {
+        "name": "X-Caller",
+        "in": "header",
+        "required": true,
+        "description": "Exact modeled caller permitted to invoke C-03.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "ESB Integration Layer"
+          ]
+        }
       },
       "LoanApplicationId": {
         "name": "loanApplicationId",

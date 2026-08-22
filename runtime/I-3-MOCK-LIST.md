@@ -12,6 +12,7 @@ All and only the three Lab 1 I-3 systems are simulated. They are deterministic i
 
 - C-01 remains HTTPS request/response / Sync at the architectural boundary even though the fake is an in-process function.
 - C-02 and C-03 remain Message with confirmation and reconciliation / Async. Their committed OpenAPI operations are simulation envelopes: `202` means that an in-process message was accepted, not that the architectural contract became synchronous.
+- The real C-01, C-02, and C-03 simulation operations require exact `X-Caller` values `Credit Scoring Adapter`, `Disbursement Adapter`, and `ESB Integration Layer`, respectively. Wrong or missing callers receive audited `403 CON.5` before request validation or fake dispatch.
 - `Account Validation Service` evaluates the SA-approved simulated, read-only `account_eligible` input received through `Mobile App`. It does not call the `Core Banking` fake and does not become source of truth for `Customer Profile`.
 - `Core Banking` remains the sole I-7 source of truth for `Customer Profile` and `Disbursement Record`. The runtime stores only its simulated record reference in `Audit Log`.
 - The runtime has no configuration field for an external URL and contains no API key, password, token, certificate, vendor identifier, or customer record.
@@ -25,3 +26,4 @@ All and only the three Lab 1 I-3 systems are simulated. They are deterministic i
 | `posting_mode` | `success`, `failure` | Deterministically selects the C-02/C-03 confirmation/reconciliation result |
 | `account_eligible` | `true`, `false` | Local read-only validation input; not a Core Banking response or copied `Customer Profile` |
 | `X-Simulated-Authorized` | string `true`, string `false` | Test-only `CON.5` switch; explicitly not a credential |
+| `X-Caller` | exact modeled source per C-01/C-02/C-03 | Test-harness enforcement of the frozen I-9 boundary; omitted from I-11 operations and explicitly not a credential |

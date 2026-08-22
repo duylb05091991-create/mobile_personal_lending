@@ -5,7 +5,7 @@ This folder is the independent, runnable I-11 slice defined by Labs 1-10. It imp
 ## What is included
 
 - All three I-11 happy paths and all seven alternatives frozen in Lab 10.
-- A typed `Loan Application` with the nine exact I-6 states and twelve exact transitions.
+- A typed `Loan Application` with the nine exact I-6 states and twelve exact transitions. Every transition records the exact I-4 `performed_by` participant and the sole `written_by` owner, `Loan Application Service`.
 - Exactly nine logical I-4 modules, collapsed into one process as documented in [`NAME-IDENTITY-MAP.md`](NAME-IDENTITY-MAP.md).
 - Exactly three I-3 in-process fakes listed in [`I-3-MOCK-LIST.md`](I-3-MOCK-LIST.md); no live external call or production credential.
 - Exactly six `POST` operations in OpenAPI 3.0.3 at [`openapi.json`](openapi.json).
@@ -65,18 +65,20 @@ Stop the local process with `Ctrl-C` after the live calls.
 
 ## Frozen operation boundary
 
-| Source identity | Method and path | `operationId` | Success |
-|---|---|---|---|
-| `Submit and Decide Loan Application` | `POST /loan-applications:submit-and-decide` | `submitAndDecideLoanApplication` | `200` |
-| `Disburse Approved Loan Application` | `POST /loan-applications/{loanApplicationId}:disburse` | `disburseApprovedLoanApplication` | `200` |
-| `Recommend Limit Increase` | `POST /customers/{customerId}:recommend-limit-increase` | `recommendLimitIncrease` | `200` |
-| C-01 `Get Credit Score` | `POST /integration/credit-scoring:get-credit-score` | `getCreditScore` | `200` |
-| C-02 `Disbursement and Accounting Request` | `POST /integration/disbursements:request` | `disbursementAndAccountingRequest` | `202` |
-| C-03 `Post Disbursement and Accounting` | `POST /integration/disbursements:post` | `postDisbursementAndAccounting` | `202` |
+| Source identity | Method and path | `operationId` | Required `X-Caller` | Success |
+|---|---|---|---|---|
+| `Submit and Decide Loan Application` | `POST /loan-applications:submit-and-decide` | `submitAndDecideLoanApplication` | N/A | `200` |
+| `Disburse Approved Loan Application` | `POST /loan-applications/{loanApplicationId}:disburse` | `disburseApprovedLoanApplication` | N/A | `200` |
+| `Recommend Limit Increase` | `POST /customers/{customerId}:recommend-limit-increase` | `recommendLimitIncrease` | N/A | `200` |
+| C-01 `Get Credit Score` | `POST /integration/credit-scoring:get-credit-score` | `getCreditScore` | `Credit Scoring Adapter` | `200` |
+| C-02 `Disbursement and Accounting Request` | `POST /integration/disbursements:request` | `disbursementAndAccountingRequest` | `Disbursement Adapter` | `202` |
+| C-03 `Post Disbursement and Accounting` | `POST /integration/disbursements:post` | `postDisbursementAndAccounting` | `ESB Integration Layer` | `202` |
 
-Every call uses the string header `X-Simulated-Authorized`. Literal `true` permits the simulation; `false` or absence returns the stable `403 CON.5` envelope. This switch is not a credential.
+Every call uses the string header `X-Simulated-Authorized`. Literal `true` permits the simulation; `false` or absence returns the stable `403 CON.5` envelope. This switch is not a credential. C-01 through C-03 additionally require the exact, case-sensitive modeled caller shown above. A missing or wrong `X-Caller` returns `403 CON.5`, records `access-denied`, and runs neither the adapter nor the I-3 fake. The three I-11 operations do not accept or require `X-Caller`.
 
 The direct C-02/C-03 test envelopes cannot manufacture lifecycle authority. C-02 requires the actual `Loan Application Service`-owned state `AccountValidated` and its exact requested amount; C-03 additionally requires the accepted pending C-02 message. A failed precondition returns `502 CON.4` without an unauthorized enqueue or Core Banking call.
+
+Agreement acceptance is a distinct internal `Mobile App -> Loan Application Service` step and is not a seventh public operation. The existing disbursement operation requires the application to be `Approved`; it cannot auto-accept an `OfferReady` application. `CAP-N02` executes that real skip attempt and proves that state, account validation, ESB, and Core Banking remain untouched.
 
 ## Stable error contract
 
@@ -98,4 +100,4 @@ The runtime does not build secured/business/SME lending, branch onboarding, manu
 
 ## Acceptance
 
-Lab 10 design approval allowed implementation to start. Human SA runtime acceptance is now `ACCEPTED` and recorded in [`SA-ACCEPTANCE.md`](SA-ACCEPTANCE.md).
+Lab 10 design approval allowed implementation to start. The remediated runtime requires a Dev R implementation commit followed by a distinct SA A signature-only commit; the current scorer-valid status is recorded in [`SA-ACCEPTANCE.md`](SA-ACCEPTANCE.md).

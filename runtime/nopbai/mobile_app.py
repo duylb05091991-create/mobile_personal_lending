@@ -21,7 +21,8 @@ class MobileApp:
         return len(self.calls)
 
     def submit_and_decide(self, body):
-        self.calls.append({"operation": "submit_and_decide"})
+        call = {"operation": "submit_and_decide"}
+        self.calls.append(call)
         application, offer = self.loan_application_service.submit_and_decide(
             body.get("customer_id"),
             body.get("existing_customer"),
@@ -31,6 +32,7 @@ class MobileApp:
             body.get("scoring_mode", "success"),
             body.get("policy_mode", "accept"),
         )
+        call["loan_application_id"] = application["loan_application_id"]
         return {
             "loan_application_id": application["loan_application_id"],
             "state": application["state"],
@@ -38,7 +40,11 @@ class MobileApp:
         }
 
     def recommend_limit_increase(self, customer_id, body):
-        self.calls.append({"operation": "recommend_limit_increase", "customer_id": customer_id})
+        call = {
+            "operation": "recommend_limit_increase",
+            "customer_id": customer_id,
+        }
+        self.calls.append(call)
         application, offer = (
             self.loan_application_service.recommend_limit_increase(
                 customer_id,
@@ -49,6 +55,7 @@ class MobileApp:
                 body.get("policy_mode", "accept"),
             )
         )
+        call["loan_application_id"] = application["loan_application_id"]
         return {
             "loan_application_id": application["loan_application_id"],
             "state": application["state"],
@@ -56,18 +63,18 @@ class MobileApp:
         }
 
     def disburse(self, loan_application_id, body):
-        self.calls.append({"operation": "disburse", "loan_application_id": loan_application_id})
+        self.calls.append(
+            {"operation": "disburse", "loan_application_id": loan_application_id}
+        )
         application = self.loan_application_service.get_application(loan_application_id)
         if application is None:
             raise ConstraintViolation(
                 "CON.4", "Loan Application does not exist", None, 422
             )
-        if application["state"] == "OfferReady":
-            application = self.accept_loan_agreement(loan_application_id)
-        elif application["state"] != "Approved":
+        if application["state"] != "Approved":
             raise ConstraintViolation(
                 "CON.4",
-                "Disbursement requires an OfferReady Loan Application and agreement acceptance",
+                "Disbursement requires prior Loan Agreement acceptance and Approved state",
                 application["state"],
                 422,
             )
@@ -96,7 +103,12 @@ class MobileApp:
         }
 
     def decline_loan_offer(self, loan_application_id):
-        self.calls.append({"operation": "decline_loan_offer", "loan_application_id": loan_application_id})
+        self.calls.append(
+            {
+                "operation": "decline_loan_offer",
+                "loan_application_id": loan_application_id,
+            }
+        )
         return self.loan_application_service.record_customer_decline(
             loan_application_id
         )

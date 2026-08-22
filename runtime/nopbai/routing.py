@@ -1,5 +1,11 @@
 """The exact six-operation SA-approved route registry."""
 
+from .identities import (
+    CREDIT_SCORING_ADAPTER,
+    DISBURSEMENT_ADAPTER,
+    ESB_INTEGRATION_LAYER,
+)
+
 ROUTE_REGISTRY = {
     "/loan-applications:submit-and-decide": {
         "method": "POST",
@@ -38,6 +44,8 @@ ROUTE_REGISTRY = {
         "source": "Get Credit Score",
         "summary": "Get Credit Score",
         "x-model-operation": "Get Credit Score",
+        "contractId": "C-01",
+        "allowedCaller": CREDIT_SCORING_ADAPTER,
         "successStatuses": (200,),
         "errorStatuses": (503, 403),
     },
@@ -48,6 +56,8 @@ ROUTE_REGISTRY = {
         "source": "Disbursement and Accounting Request",
         "summary": "Disbursement and Accounting Request",
         "x-model-operation": "Disbursement and Accounting Request",
+        "contractId": "C-02",
+        "allowedCaller": DISBURSEMENT_ADAPTER,
         "successStatuses": (202,),
         "errorStatuses": (502, 403),
     },
@@ -58,6 +68,8 @@ ROUTE_REGISTRY = {
         "source": "Post Disbursement and Accounting",
         "summary": "Post Disbursement and Accounting",
         "x-model-operation": "Post Disbursement and Accounting",
+        "contractId": "C-03",
+        "allowedCaller": ESB_INTEGRATION_LAYER,
         "successStatuses": (202,),
         "errorStatuses": (502, 403),
     },
