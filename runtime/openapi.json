@@ -1,0 +1,778 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Nopbai Personal Loan Platform - I-11 Capstone Runtime",
+    "version": "1.0.0",
+    "description": "Committed G4 contract for the SA-approved I-11 simulation. The contract exposes exactly three I-11 operations and three Lab 3 integration operations. All external systems are in-process fakes; no production credentials or hosts are used."
+  },
+  "paths": {
+    "/loan-applications:submit-and-decide": {
+      "post": {
+        "summary": "Submit and Decide Loan Application",
+        "operationId": "submitAndDecideLoanApplication",
+        "x-model-operation": "Submit and Decide Loan Application",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SimulatedAuthorized"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAndDecideRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Loan Application decision and existing I-7 Loan Offer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanApplicationOfferResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CON.1 amount/policy/request rejection or CON.2 customer-segment/request rejection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CON.3 controlled scoring timeout, unavailability, or scoring-request schema rejection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CON.5 simulated authorization denied and audited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loan-applications/{loanApplicationId}:disburse": {
+      "post": {
+        "summary": "Disburse Approved Loan Application",
+        "operationId": "disburseApprovedLoanApplication",
+        "x-model-operation": "Disburse Approved Loan Application",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LoanApplicationId"
+          },
+          {
+            "$ref": "#/components/parameters/SimulatedAuthorized"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisburseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Confirmed disbursement and Core Banking record reference",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisbursementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CON.4 request, approval, product-purpose, or account-validation precondition failed; no message is sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CON.4 asynchronous posting or confirmation failed and reconciliation evidence was retained",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CON.5 simulated authorization denied and audited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customers/{customerId}:recommend-limit-increase": {
+      "post": {
+        "summary": "Recommend Limit Increase",
+        "operationId": "recommendLimitIncrease",
+        "x-model-operation": "Recommend Limit Increase",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CustomerId"
+          },
+          {
+            "$ref": "#/components/parameters/SimulatedAuthorized"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendLimitIncreaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing I-7 Loan Offer containing the recommended terms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoanApplicationOfferResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "CON.1 amount/policy/request rejection or CON.2 customer-segment/request rejection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CON.5 simulated authorization denied and audited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/credit-scoring:get-credit-score": {
+      "post": {
+        "summary": "Get Credit Score",
+        "operationId": "getCreditScore",
+        "x-model-operation": "Get Credit Score",
+        "x-contract-id": "C-01",
+        "x-protocol-mode": "HTTPS request/response / Sync",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SimulatedAuthorized"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetCreditScoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Normalized near-real-time Credit Score from the Credit Scoring System fake",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditScoreResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "CON.3 controlled scoring timeout, unavailability, or request-schema rejection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CON.5 simulated authorization denied and audited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/disbursements:request": {
+      "post": {
+        "summary": "Disbursement and Accounting Request",
+        "operationId": "disbursementAndAccountingRequest",
+        "x-model-operation": "Disbursement and Accounting Request",
+        "x-contract-id": "C-02",
+        "x-protocol-mode": "Message with confirmation and reconciliation / Async",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SimulatedAuthorized"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisbursementMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Message / Async request accepted by the in-process queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedDisbursementMessage"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CON.4 request schema, owner-held AccountValidated state, or amount precondition failed; no message is queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CON.5 simulated authorization denied and audited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration/disbursements:post": {
+      "post": {
+        "summary": "Post Disbursement and Accounting",
+        "operationId": "postDisbursementAndAccounting",
+        "x-model-operation": "Post Disbursement and Accounting",
+        "x-contract-id": "C-03",
+        "x-protocol-mode": "Message with confirmation and reconciliation / Async",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SimulatedAuthorized"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisbursementMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Message / Async posting accepted by the in-process queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedPostingMessage"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "CON.4 request schema, owner-state, or pending C-02 precondition failed, or posting/confirmation failed with reconciliation evidence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CON.5 simulated authorization denied and audited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstraintErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "SimulatedAuthorized": {
+        "name": "X-Simulated-Authorized",
+        "in": "header",
+        "required": true,
+        "description": "Simulation-only authorization switch. This is not a credential; use the literal string true or false.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "true",
+            "false"
+          ]
+        },
+        "example": "true"
+      },
+      "LoanApplicationId": {
+        "name": "loanApplicationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "CustomerId": {
+        "name": "customerId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "schemas": {
+      "SubmitAndDecideRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "customer_id",
+          "existing_customer",
+          "salaried",
+          "age",
+          "requested_amount",
+          "scoring_mode",
+          "policy_mode"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "existing_customer": {
+            "type": "boolean"
+          },
+          "salaried": {
+            "type": "boolean"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "requested_amount": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "scoring_mode": {
+            "type": "string",
+            "enum": [
+              "success",
+              "timeout",
+              "unavailable"
+            ]
+          },
+          "policy_mode": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "reject"
+            ]
+          }
+        }
+      },
+      "DisburseRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account_eligible",
+          "posting_mode"
+        ],
+        "properties": {
+          "account_eligible": {
+            "type": "boolean"
+          },
+          "posting_mode": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure"
+            ]
+          }
+        }
+      },
+      "RecommendLimitIncreaseRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "existing_customer",
+          "salaried",
+          "age",
+          "requested_amount",
+          "policy_mode"
+        ],
+        "properties": {
+          "existing_customer": {
+            "type": "boolean"
+          },
+          "salaried": {
+            "type": "boolean"
+          },
+          "age": {
+            "type": "integer"
+          },
+          "requested_amount": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "policy_mode": {
+            "type": "string",
+            "enum": [
+              "accept",
+              "reject"
+            ]
+          }
+        }
+      },
+      "GetCreditScoreRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "customer_id",
+          "scoring_mode"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scoring_mode": {
+            "type": "string",
+            "enum": [
+              "success",
+              "timeout",
+              "unavailable"
+            ]
+          }
+        }
+      },
+      "DisbursementMessageRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "loan_application_id",
+          "account_validated",
+          "amount",
+          "posting_mode"
+        ],
+        "properties": {
+          "loan_application_id": {
+            "type": "string",
+            "description": "Must resolve to the Loan Application Service-owned aggregate.",
+            "minLength": 1
+          },
+          "account_validated": {
+            "type": "boolean",
+            "description": "Must be true and must agree with the owner-held AccountValidated state; it cannot create that state."
+          },
+          "amount": {
+            "type": "integer",
+            "description": "Must equal the requested amount held by Loan Application Service.",
+            "minimum": 1
+          },
+          "posting_mode": {
+            "type": "string",
+            "enum": [
+              "success",
+              "failure"
+            ]
+          }
+        }
+      },
+      "LoanOffer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "loan_offer_id",
+          "loan_application_id",
+          "customer_id",
+          "amount",
+          "annual_interest_rate",
+          "term_months",
+          "outcome"
+        ],
+        "properties": {
+          "loan_offer_id": {
+            "type": "string"
+          },
+          "loan_application_id": {
+            "type": "string"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer"
+          },
+          "annual_interest_rate": {
+            "type": "number",
+            "format": "double"
+          },
+          "term_months": {
+            "type": "integer"
+          },
+          "outcome": {
+            "type": "string"
+          }
+        }
+      },
+      "LoanApplicationOfferResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "loan_application_id",
+          "state",
+          "loan_offer"
+        ],
+        "properties": {
+          "loan_application_id": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LoanApplicationState"
+          },
+          "loan_offer": {
+            "$ref": "#/components/schemas/LoanOffer"
+          }
+        }
+      },
+      "DisbursementResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "loan_application_id",
+          "state",
+          "disbursement_record_reference",
+          "confirmation"
+        ],
+        "properties": {
+          "loan_application_id": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LoanApplicationState"
+          },
+          "disbursement_record_reference": {
+            "type": "string"
+          },
+          "confirmation": {
+            "type": "string",
+            "enum": [
+              "confirmed"
+            ]
+          }
+        }
+      },
+      "CreditScoreResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "customer_id",
+          "credit_score"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "credit_score": {
+            "type": "integer"
+          }
+        }
+      },
+      "AcceptedDisbursementMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id",
+          "loan_application_id",
+          "status"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "loan_application_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "accepted"
+            ]
+          }
+        }
+      },
+      "AcceptedPostingMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id",
+          "loan_application_id",
+          "status",
+          "disbursement_record_reference"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "loan_application_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "confirmed"
+            ]
+          },
+          "disbursement_record_reference": {
+            "type": "string"
+          }
+        }
+      },
+      "LoanApplicationState": {
+        "type": "string",
+        "enum": [
+          "Draft",
+          "Submitted",
+          "Scoring",
+          "OfferReady",
+          "Approved",
+          "AccountValidated",
+          "Rejected",
+          "Disbursed",
+          "Failed"
+        ]
+      },
+      "ConstraintErrorEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "constraint",
+              "reason",
+              "state"
+            ],
+            "properties": {
+              "constraint": {
+                "type": "string",
+                "enum": [
+                  "CON.1",
+                  "CON.2",
+                  "CON.3",
+                  "CON.4",
+                  "CON.5"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  "Draft",
+                  "Submitted",
+                  "Scoring",
+                  "OfferReady",
+                  "Approved",
+                  "AccountValidated",
+                  "Rejected",
+                  "Disbursed",
+                  "Failed"
+                ]
+              }
+            }
+          }
+        },
+        "example": {
+          "error": {
+            "constraint": "CON.3",
+            "reason": "Credit Scoring System timeout",
+            "state": "Failed"
+          }
+        }
+      }
+    }
+  }
+}
