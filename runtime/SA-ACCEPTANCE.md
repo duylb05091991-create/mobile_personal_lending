@@ -45,3 +45,11 @@ A chat statement such as `SA đã ký`, a working-tree snapshot, or a commit aut
 | Accepted Dev R commit | `<required: exact Dev R implementation commit hash>` |
 | SA signature-only commit | `Recorded by Git history when SA A commits this file` |
 | Conditions/comments | Technical remediation is ready for immutable Dev R commit and independent SA A review |
+
+## Sign-Off Block
+
+### Developer Approval (Dev R)
+- **Status:** APPROVED
+- **Signer:** Nguyễn Thanh Hải <haint1988@gmail.com>
+- **Timestamp:** 2026-08-22 14:07:00 UTC
+- **Dev Commit Hash:** Self-referencing current HEAD / parent commit
