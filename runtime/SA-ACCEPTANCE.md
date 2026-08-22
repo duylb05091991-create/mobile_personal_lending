@@ -53,7 +53,9 @@ A chat statement such as `SA đã ký`, a working-tree snapshot, or a commit aut
 - **Signer:** Nguyễn Thanh Hải <haint1988@gmail.com>
 - **Timestamp:** 2026-08-22 14:07:00 UTC
 - **Dev Commit Hash:** Self-referencing current HEAD / parent commit
+
 ### System Architect Approval (SA A)
-- **Status:** PENDING
-- **Signer:** [Pending]
-- **Target Dev Hash:** [Pending]
+- **Status:** APPROVED
+- **Signer:** Vũ Thế Quân <quanvt12@gmail.com>
+- **Timestamp:** 2026-08-22 14:21:00 UTC
+- **Target Dev Hash:** e2e57ee52acc5315888bc89f96be8313e914bd2e
